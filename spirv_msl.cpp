@@ -4684,7 +4684,7 @@ string CompilerMSL::image_type_glsl(const SPIRType &type, uint32_t id)
 	return img_type_name;
 }
 
-string CompilerMSL::bitcast_glsl_op(const SPIRType &out_type, const SPIRType &in_type)
+string CompilerMSL::bitcast_glsl_no_ptr_op(const SPIRType &out_type, const SPIRType &in_type)
 {
 	if ((out_type.basetype == SPIRType::UShort && in_type.basetype == SPIRType::Short) ||
 	    (out_type.basetype == SPIRType::Short && in_type.basetype == SPIRType::UShort) ||

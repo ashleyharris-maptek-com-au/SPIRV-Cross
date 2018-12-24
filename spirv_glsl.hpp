@@ -18,6 +18,7 @@
 #define SPIRV_CROSS_GLSL_HPP
 
 #include "spirv_cross.hpp"
+#include "spirv_memory_analyser.hpp"
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
@@ -128,25 +129,25 @@ public:
 	}
 
 	explicit CompilerGLSL(std::vector<uint32_t> spirv_)
-	    : Compiler(move(spirv_))
+	    : Compiler(move(spirv_)), memory_analyser(*this, ir)
 	{
 		init();
 	}
 
 	CompilerGLSL(const uint32_t *ir_, size_t word_count)
-	    : Compiler(ir_, word_count)
+	    : Compiler(ir_, word_count), memory_analyser(*this, ir)
 	{
 		init();
 	}
 
 	explicit CompilerGLSL(const ParsedIR &ir_)
-	    : Compiler(ir_)
+	    : Compiler(ir_), memory_analyser(*this, ir)
 	{
 		init();
 	}
 
 	explicit CompilerGLSL(ParsedIR &&ir_)
-	    : Compiler(std::move(ir_))
+	    : Compiler(std::move(ir_)), memory_analyser(*this, ir)
 	{
 		init();
 	}
@@ -350,6 +351,12 @@ protected:
 
 	bool processing_entry_point = false;
 
+  // Do more complex ptr and memory tracking analysis to handle tricky shaders which would otherwise be
+  // impossible to represent in GLSL:
+  bool analyse_memory_layout = false;
+  MemoryAnalyser memory_analyser;
+  GlobalPointerComplexity global_pointer_complexity = GlobalPointerComplexity::AllTrivial;
+
 	// Can be overriden by subclass backends for trivial things which
 	// shouldn't need polymorphism.
 	struct BackendVariations
@@ -500,8 +507,8 @@ protected:
 	uint32_t type_to_packed_array_stride(const SPIRType &type, const Bitset &flags, BufferPackingStandard packing);
 	uint32_t type_to_packed_size(const SPIRType &type, const Bitset &flags, BufferPackingStandard packing);
 
-	std::string bitcast_glsl(const SPIRType &result_type, uint32_t arg);
-	virtual std::string bitcast_glsl_op(const SPIRType &result_type, const SPIRType &argument_type);
+	std::string bitcast_glsl_no_ptr(const SPIRType &result_type, uint32_t arg);
+	virtual std::string bitcast_glsl_no_ptr_op(const SPIRType &result_type, const SPIRType &argument_type);
 
 	std::string bitcast_expression(SPIRType::BaseType target_type, uint32_t arg);
 	std::string bitcast_expression(const SPIRType &target_type, SPIRType::BaseType expr_type, const std::string &expr);

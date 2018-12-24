@@ -17,6 +17,7 @@
 #include "spirv_glsl.hpp"
 #include "GLSL.std.450.h"
 #include "spirv_common.hpp"
+#include "spirv_memory_analyser.hpp"
 #include <algorithm>
 #include <assert.h>
 #include <cmath>
@@ -442,6 +443,11 @@ string CompilerGLSL::compile()
 			SPIRV_CROSS_THROW("Over 3 compilation loops detected. Must be a bug!");
 
 		reset();
+
+    if (analyse_memory_layout)
+    {
+      global_pointer_complexity = memory_analyser.process();
+    }
 
 		// Move constructor for this type is broken on GCC 4.9 ...
 		buffer = unique_ptr<ostringstream>(new ostringstream());
@@ -2824,7 +2830,7 @@ string CompilerGLSL::constant_op_expression(const SPIRConstantOp &cop)
 		if (type.basetype != input_type && type.basetype != SPIRType::Boolean)
 		{
 			expected_type.basetype = input_type;
-			auto expr = bitcast_glsl_op(type, expected_type);
+			auto expr = bitcast_glsl_no_ptr_op(type, expected_type);
 			expr += '(';
 			expr += join(cast_op0, " ", op, " ", cast_op1);
 			expr += ')';
@@ -2840,7 +2846,7 @@ string CompilerGLSL::constant_op_expression(const SPIRConstantOp &cop)
 
 		// Auto-bitcast to result type as needed.
 		// Works around various casting scenarios in glslang as there is no OpBitcast for specialization constants.
-		return join("(", op, bitcast_glsl(type, cop.arguments[0]), ")");
+		return join("(", op, bitcast_glsl_no_ptr(type, cop.arguments[0]), ")");
 	}
 	else
 	{
@@ -2992,7 +2998,7 @@ string CompilerGLSL::convert_float_to_string(const SPIRConstant &c, uint32_t col
 
 			char print_buffer[32];
 			sprintf(print_buffer, "0x%xu", c.scalar(col, row));
-			res = join(bitcast_glsl_op(out_type, in_type), "(", print_buffer, ")");
+			res = join(bitcast_glsl_no_ptr_op(out_type, in_type), "(", print_buffer, ")");
 		}
 		else
 		{
@@ -3059,7 +3065,7 @@ std::string CompilerGLSL::convert_double_to_string(const SPIRConstant &c, uint32
 			char print_buffer[64];
 			sprintf(print_buffer, "0x%llx%s", static_cast<unsigned long long>(u64_value),
 			        backend.long_long_literal_suffix ? "ull" : "ul");
-			res = join(bitcast_glsl_op(out_type, in_type), "(", print_buffer, ")");
+			res = join(bitcast_glsl_no_ptr_op(out_type, in_type), "(", print_buffer, ")");
 		}
 		else
 		{
@@ -3593,8 +3599,8 @@ SPIRType CompilerGLSL::binary_op_bitcast_helper(string &cast_op0, string &cast_o
 
 	if (cast)
 	{
-		cast_op0 = bitcast_glsl(expected_type, op0);
-		cast_op1 = bitcast_glsl(expected_type, op1);
+		cast_op0 = bitcast_glsl_no_ptr(expected_type, op0);
+		cast_op1 = bitcast_glsl_no_ptr(expected_type, op1);
 	}
 	else
 	{
@@ -3621,7 +3627,7 @@ void CompilerGLSL::emit_binary_op_cast(uint32_t result_type, uint32_t result_id,
 	if (out_type.basetype != input_type && out_type.basetype != SPIRType::Boolean)
 	{
 		expected_type.basetype = input_type;
-		expr = bitcast_glsl_op(out_type, expected_type);
+		expr = bitcast_glsl_no_ptr_op(out_type, expected_type);
 		expr += '(';
 		expr += join(cast_op0, " ", op, " ", cast_op1);
 		expr += ')';
@@ -3663,7 +3669,7 @@ void CompilerGLSL::emit_binary_func_op_cast(uint32_t result_type, uint32_t resul
 	if (out_type.basetype != input_type && out_type.basetype != SPIRType::Boolean)
 	{
 		expected_type.basetype = input_type;
-		expr = bitcast_glsl_op(out_type, expected_type);
+		expr = bitcast_glsl_no_ptr_op(out_type, expected_type);
 		expr += '(';
 		expr += join(op, "(", cast_op0, ", ", cast_op1, ")");
 		expr += ')';
@@ -5151,7 +5157,7 @@ case OpGroupNonUniform##op: \
 	register_control_dependent_expression(id);
 }
 
-string CompilerGLSL::bitcast_glsl_op(const SPIRType &out_type, const SPIRType &in_type)
+string CompilerGLSL::bitcast_glsl_no_ptr_op(const SPIRType &out_type, const SPIRType &in_type)
 {
 	if (out_type.basetype == SPIRType::UShort && in_type.basetype == SPIRType::Short)
 		return type_to_glsl(out_type);
@@ -5215,9 +5221,9 @@ string CompilerGLSL::bitcast_glsl_op(const SPIRType &out_type, const SPIRType &i
 		return "";
 }
 
-string CompilerGLSL::bitcast_glsl(const SPIRType &result_type, uint32_t argument)
+string CompilerGLSL::bitcast_glsl_no_ptr(const SPIRType &result_type, uint32_t argument)
 {
-	auto op = bitcast_glsl_op(result_type, expression_type(argument));
+	auto op = bitcast_glsl_no_ptr_op(result_type, expression_type(argument));
 	if (op.empty())
 		return to_enclosed_expression(argument);
 	else
@@ -5232,7 +5238,7 @@ std::string CompilerGLSL::bitcast_expression(SPIRType::BaseType target_type, uin
 	{
 		auto target = src_type;
 		target.basetype = target_type;
-		expr = join(bitcast_glsl_op(target, src_type), "(", expr, ")");
+		expr = join(bitcast_glsl_no_ptr_op(target, src_type), "(", expr, ")");
 	}
 
 	return expr;
@@ -5246,7 +5252,7 @@ std::string CompilerGLSL::bitcast_expression(const SPIRType &target_type, SPIRTy
 
 	auto src_type = target_type;
 	src_type.basetype = expr_type;
-	return join(bitcast_glsl_op(target_type, src_type), "(", expr, ")");
+	return join(bitcast_glsl_no_ptr_op(target_type, src_type), "(", expr, ")");
 }
 
 string CompilerGLSL::builtin_to_glsl(BuiltIn builtin, StorageClass storage)
@@ -6934,6 +6940,7 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
 	{
 		uint32_t lhs = ops[0];
 		uint32_t rhs = ops[1];
+
 		if (lhs != rhs)
 		{
 			flush_variable_declaration(lhs);
@@ -6943,6 +6950,22 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
 		}
 		break;
 	}
+
+  case OpCopyMemorySized:
+  {
+    if (!analyse_memory_layout)
+    {
+      // If we're copying part of a structure / array / etc, then we need to analyse our memory
+      // layout in order to work out exactly which members are being copied.
+      force_recompile = true;
+      analyse_memory_layout = true;
+      break;
+    }
+
+    //:TODO: Ashley Harris
+
+    break;
+  }
 
 	case OpCopyObject:
 	{
@@ -7463,10 +7486,70 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
 		uint32_t id = ops[1];
 		uint32_t arg = ops[2];
 
-		auto op = bitcast_glsl_op(get<SPIRType>(result_type), expression_type(arg));
-		emit_unary_func_op(result_type, id, arg, op.c_str());
+    auto outputSpirvType = get<SPIRType>(result_type);
+    auto inputSpirvType = expression_type(arg);
+
+    if (outputSpirvType.pointer || inputSpirvType.pointer)
+    {
+      // If we're casting pointers, then we need a build a memory map in order to
+      // attempt to convert those pointer operations to pointer-free language like GLSL.
+      if (!analyse_memory_layout)
+      {
+        force_recompile = true;
+        analyse_memory_layout = true;
+        break;
+      }
+    }
+
+    if (outputSpirvType.pointer && inputSpirvType.pointer)
+    {
+      // This is basically a reinterpret_cast
+
+      //:TODO: Ashley Harris
+    }
+    else if (outputSpirvType.pointer)
+    {
+      // This is a cast of int -> ptr (or OpConvertUToPtr)
+
+      //:TODO: Ashley Harris
+
+    }
+    else if (inputSpirvType.pointer)
+    {
+      // This is a cast of ptr -> int (or OpConvertPtrToU)
+
+      //:TODO: Ashley Harris
+
+    }
+    else
+    {
+      auto op = bitcast_glsl_no_ptr_op(outputSpirvType, inputSpirvType);
+      emit_unary_func_op(result_type, id, arg, op.c_str());
+    }
 		break;
 	}
+
+  case OpConvertUToPtr:
+  case OpConvertPtrToU:
+  {
+    if (!analyse_memory_layout)
+    {
+      // If we're casting pointers, then we need a build a memory map in order to
+      // attempt to convert those pointer operations to pointer-free language like GLSL.
+      force_recompile = true;
+      analyse_memory_layout = true;
+      break;
+    }
+
+    //:TODO: Ashley Harris
+
+
+    break;
+  }
+
+
+
+
 
 	case OpQuantizeToF16:
 	{
@@ -9397,7 +9480,9 @@ void CompilerGLSL::emit_function(SPIRFunction &func, const Bitset &return_flags)
 		return;
 	func.active = true;
 
-	// If we depend on a function, emit that function before we emit our own function.
+  // Preparser steps:
+	// - If we depend on a function, emit that function before we emit our own function.
+  // - If we need to attempt to simplify complex pointer usage, analyse the function now.
 	for (auto block : func.blocks)
 	{
 		auto &b = get<SPIRBlock>(block);

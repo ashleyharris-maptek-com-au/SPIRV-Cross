@@ -339,7 +339,7 @@ protected:
 	                             uint32_t comp, uint32_t sample, bool *p_forward) override;
 	std::string to_initializer_expression(const SPIRVariable &var) override;
 	std::string unpack_expression_type(std::string expr_str, const SPIRType &type) override;
-	std::string bitcast_glsl_op(const SPIRType &result_type, const SPIRType &argument_type) override;
+	std::string bitcast_glsl_no_ptr_op(const SPIRType &result_type, const SPIRType &argument_type) override;
 	bool skip_argument(uint32_t id) const override;
 	std::string to_member_reference(const SPIRVariable *var, const SPIRType &type, uint32_t index) override;
 	std::string to_qualifiers_glsl(uint32_t id) override;

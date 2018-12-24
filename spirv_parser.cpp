@@ -159,6 +159,11 @@ void Parser::parse(const Instruction &instruction)
 	switch (op)
 	{
 	case OpMemoryModel:
+  {
+    auto addressingModel = static_cast<AddressingModel>(ops[0]);
+    auto memoryModel = static_cast<MemoryModel>(ops[1]);
+    //:TODO: Ashley Harris
+  }
 	case OpSourceContinued:
 	case OpSourceExtension:
 	case OpNop:

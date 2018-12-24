@@ -16,6 +16,7 @@
 
 #include "spirv_hlsl.hpp"
 #include "GLSL.std.450.h"
+#include "spirv_memory_analyser.hpp"
 #include <algorithm>
 #include <assert.h>
 
@@ -3066,7 +3067,7 @@ void CompilerHLSL::emit_uniform(const SPIRVariable &var)
 		emit_legacy_uniform(var);
 }
 
-string CompilerHLSL::bitcast_glsl_op(const SPIRType &out_type, const SPIRType &in_type)
+string CompilerHLSL::bitcast_glsl_no_ptr_op(const SPIRType &out_type, const SPIRType &in_type)
 {
 	if (out_type.basetype == SPIRType::UInt && in_type.basetype == SPIRType::Int)
 		return type_to_glsl(out_type);
@@ -3418,7 +3419,7 @@ string CompilerHLSL::read_access_chain(const SPIRAccessChain &chain)
 		load_expr += ")";
 	}
 
-	auto bitcast_op = bitcast_glsl_op(type, target_type);
+	auto bitcast_op = bitcast_glsl_no_ptr_op(type, target_type);
 	if (!bitcast_op.empty())
 		load_expr = join(bitcast_op, "(", load_expr, ")");
 
@@ -3491,7 +3492,7 @@ void CompilerHLSL::write_access_chain(const SPIRAccessChain &chain, uint32_t val
 		}
 
 		auto store_expr = to_expression(value);
-		auto bitcast_op = bitcast_glsl_op(target_type, type);
+		auto bitcast_op = bitcast_glsl_no_ptr_op(target_type, type);
 		if (!bitcast_op.empty())
 			store_expr = join(bitcast_op, "(", store_expr, ")");
 		statement(chain.base, ".", store_op, "(", chain.dynamic_index, chain.static_index, ", ", store_expr, ");");
@@ -3509,7 +3510,7 @@ void CompilerHLSL::write_access_chain(const SPIRAccessChain &chain, uint32_t val
 			}
 			remove_duplicate_swizzle(store_expr);
 
-			auto bitcast_op = bitcast_glsl_op(target_type, type);
+			auto bitcast_op = bitcast_glsl_no_ptr_op(target_type, type);
 			if (!bitcast_op.empty())
 				store_expr = join(bitcast_op, "(", store_expr, ")");
 			statement(chain.base, ".Store(", chain.dynamic_index, chain.static_index + chain.matrix_stride * r, ", ",
@@ -3540,7 +3541,7 @@ void CompilerHLSL::write_access_chain(const SPIRAccessChain &chain, uint32_t val
 		for (uint32_t c = 0; c < type.columns; c++)
 		{
 			auto store_expr = join(to_enclosed_expression(value), "[", c, "]");
-			auto bitcast_op = bitcast_glsl_op(target_type, type);
+			auto bitcast_op = bitcast_glsl_no_ptr_op(target_type, type);
 			if (!bitcast_op.empty())
 				store_expr = join(bitcast_op, "(", store_expr, ")");
 			statement(chain.base, ".", store_op, "(", chain.dynamic_index, chain.static_index + c * chain.matrix_stride,
@@ -3555,7 +3556,7 @@ void CompilerHLSL::write_access_chain(const SPIRAccessChain &chain, uint32_t val
 			{
 				auto store_expr = join(to_enclosed_expression(value), "[", c, "].", index_to_swizzle(r));
 				remove_duplicate_swizzle(store_expr);
-				auto bitcast_op = bitcast_glsl_op(target_type, type);
+				auto bitcast_op = bitcast_glsl_no_ptr_op(target_type, type);
 				if (!bitcast_op.empty())
 					store_expr = join(bitcast_op, "(", store_expr, ")");
 				statement(chain.base, ".Store(", chain.dynamic_index,
@@ -4698,6 +4699,11 @@ string CompilerHLSL::compile()
 			SPIRV_CROSS_THROW("Over 3 compilation loops detected. Must be a bug!");
 
 		reset();
+
+    if (analyse_memory_layout)
+    {
+      global_pointer_complexity = memory_analyser.process();
+    }
 
 		// Move constructor for this type is broken on GCC 4.9 ...
 		buffer = unique_ptr<ostringstream>(new ostringstream());

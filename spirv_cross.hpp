@@ -23,6 +23,9 @@
 
 namespace spirv_cross
 {
+class MemoryAnalyser;
+enum class GlobalPointerComplexity;
+
 struct Resource
 {
 	// Resources are identified with their SPIR-V ID.
@@ -118,7 +121,8 @@ class Compiler
 {
 public:
 	friend class CFG;
-	friend class DominatorBuilder;
+  friend class DominatorBuilder;
+  friend class MemoryAnalyser;
 
 	// The constructor takes a buffer of SPIR-V words and parses it.
 	// It will create its own parser, parse the SPIR-V and move the parsed IR
@@ -657,7 +661,7 @@ protected:
 	bool execution_is_noop(const SPIRBlock &from, const SPIRBlock &to) const;
 	SPIRBlock::ContinueBlockType continue_block_type(const SPIRBlock &continue_block) const;
 
-	bool force_recompile = false;
+  bool force_recompile = false;
 
 	bool block_is_loop_candidate(const SPIRBlock &block, SPIRBlock::Method method) const;
 
