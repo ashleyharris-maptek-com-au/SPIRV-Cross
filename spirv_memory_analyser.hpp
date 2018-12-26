@@ -62,7 +62,6 @@
 //   _11 = vec4(_3, _4.x)
 //   _12 = vec4(_3.z, _4)
 
-
 #include "spirv_cross.hpp"
 
 #include <cstdint>
@@ -71,57 +70,57 @@
 
 namespace spirv_cross
 {
-  enum class GlobalPointerComplexity
-  {
-    // The memory analyser wasn't needed. Everything should be simple enough that the
-    // existing code should manage. (Ie success!)
-    AllTrivial = 0,
+enum class GlobalPointerComplexity
+{
+	// The memory analyser wasn't needed. Everything should be simple enough that the
+	// existing code should manage. (Ie success!)
+	AllTrivial = 0,
 
-    // We can map all values loaded from a pointer back to composition of access chains
-    // of values written to the memory or other known values. (Ie success!). Any instruction
-    // that returns false to is_instruction_trivial will need additional processing,
-    // detailed below.
-    CanRepresentUnmodifiedWithoutPointers,
+	// We can map all values loaded from a pointer back to composition of access chains
+	// of values written to the memory or other known values. (Ie success!). Any instruction
+	// that returns false to is_instruction_trivial will need additional processing,
+	// detailed below.
+	CanRepresentUnmodifiedWithoutPointers,
 
-    // We can process the code, however we have to export additional code. The
-    // most common things we need to add:
-    // - Arrays and allocator functions. Maybe we have Ptr<T> struct members
-    //   that must be stored as integer array members, or we have memory access
-    //   through pointers set by recursive OpPhi instruction paths (eg. A
-    //   typical compiled and optimised C++ std::array<Struct> iteration uses
-    //   the pointer as the loop variable), or we may have a recursive function
-    //   that calls OpVariable.
-    // - We may have a "malloc" intrinsic added as an extension function.
-    //   OpVariable can't be called in a loop as of current GLSL, but this may
-    //   change in the future.
-    // - BitCast functions for misaligned read / writes. (Of integers -
-    //   misaligned float reads are too dubious to simulate).
-    // - Phi tracking, as we're writing to a pointer that's set by an OpPhi, or
-    //   from pointer maths based on an OpPhi with bounded values.
-    //
-    // This is still success.
-    CanRepresentButNeedsAdditionalGlobalCode,
+	// We can process the code, however we have to export additional code. The
+	// most common things we need to add:
+	// - Arrays and allocator functions. Maybe we have Ptr<T> struct members
+	//   that must be stored as integer array members, or we have memory access
+	//   through pointers set by recursive OpPhi instruction paths (eg. A
+	//   typical compiled and optimised C++ std::array<Struct> iteration uses
+	//   the pointer as the loop variable), or we may have a recursive function
+	//   that calls OpVariable.
+	// - We may have a "malloc" intrinsic added as an extension function.
+	//   OpVariable can't be called in a loop as of current GLSL, but this may
+	//   change in the future.
+	// - BitCast functions for misaligned read / writes. (Of integers -
+	//   misaligned float reads are too dubious to simulate).
+	// - Phi tracking, as we're writing to a pointer that's set by an OpPhi, or
+	//   from pointer maths based on an OpPhi with bounded values.
+	//
+	// This is still success.
+	CanRepresentButNeedsAdditionalGlobalCode,
 
-    // We could represent it, but we need upper bounds for the number of objects
-    // created so that we can back them with an array. Maybe we have a graph or
-    // a linked list? Typed pointers will need to be stored as indices into an
-    // array.
-    //
-    // So, failure, but resolvable with a little help.
-    AllocationsNeedUpperBounds,
+	// We could represent it, but we need upper bounds for the number of objects
+	// created so that we can back them with an array. Maybe we have a graph or
+	// a linked list? Typed pointers will need to be stored as indices into an
+	// array.
+	//
+	// So, failure, but resolvable with a little help.
+	AllocationsNeedUpperBounds,
 
-    // We load data from a location which we couldn't statically decode. We can
-    // add hints for it if we know the value. Eg we've passed in a integer and
-    // an array, cast the integer to a pointer, and loaded from it. We can only
-    // generate GLSL code from this if we know for certain something useful, eg
-    // that the pointer will be an integer within the array.
-    //
-    // So, failure, but resolvable with assistance.
-    UntracablePtrLoad,
+	// We load data from a location which we couldn't statically decode. We can
+	// add hints for it if we know the value. Eg we've passed in a integer and
+	// an array, cast the integer to a pointer, and loaded from it. We can only
+	// generate GLSL code from this if we know for certain something useful, eg
+	// that the pointer will be an integer within the array.
+	//
+	// So, failure, but resolvable with assistance.
+	UntracablePtrLoad,
 
-    // Not going to happen. Sorry. Too hard.
-    NotImplementedOrNotPossible,
-  };
+	// Not going to happen. Sorry. Too hard.
+	NotImplementedOrNotPossible,
+};
 
 class MemoryAnalyser
 {
@@ -189,28 +188,28 @@ public:
 		struct Address
 		{
 			// The address stored in this pointer, if known.
-			uint32_t exact_address = -1;
+			uint32_t exact_address = uint32_t(-1);
 
 			// If an exact address is not known, we track the morphing of the pointer
 			// back from it's origin.
-			uint32_t base_variable_id = -1;
-			uint32_t offset_id = -1;
+			uint32_t base_variable_id = uint32_t(-1);
+			uint32_t offset_id = uint32_t(-1);
 			int32_t litteral_offset = 0;
 
 			// In what block the pointer is set to this address.
-			uint32_t set_in_block_label = -1;
+			uint32_t set_in_block_label = uint32_t(-1);
 
 			// The pointer is only set to this value when the above block is entered.
-			uint32_t conditional_predecessor_label = -1;
+			uint32_t conditional_predecessor_label = uint32_t(-1);
 		};
 
 		// All addresses stored in this pointer
 		std::vector<Address> addresses;
 
 		// Whether the pointer can hold an unlimited number of addresses.
-    // For example, c++ iterators may compile to pointer maths, which
-    // results in an advancing pointer in a loop. If the loop is unknown bounds,
-    // we're going to have trouble converting this to an array lookup.
+		// For example, c++ iterators may compile to pointer maths, which
+		// results in an advancing pointer in a loop. If the loop is unknown bounds,
+		// we're going to have trouble converting this to an array lookup.
 		//
 		// Specifying a bound may allow this to be represented as an array.
 		bool unbounded_address_count = false;
@@ -233,8 +232,6 @@ public:
 	// structs this is memory model specific).
 	uint32_t size_of(const SPIRType &Type) const;
 
-
-
 	GlobalPointerComplexity process();
 
 	// Hint that no more than Count Type's are ever created:
@@ -248,14 +245,14 @@ public:
 
 	// Set a hint that a pointer will have a certain alignment when memory is accessed. By default, we
 	// assume that everything is always nice and aligned to multiples of the underlying scalar size,
-  // so there's no mis-aligned reads or writes.
+	// so there's no mis-aligned reads or writes.
 	void set_hint_ptr_alignment(uint32_t UnknownPtrId, uint32_t Modulo);
 
 	// We may need to know the current and previous block labels. This is needed
 	// to support nasty edge cases, like OpStore(OpPhi<Ptr<T>>(...), T). These
 	// edge cases come from general purpose compiler tool chains (eg. LLVM)
 	// applying aggressive optimisations, and are even pretty rare when compiling
-  // C++ to SPIR-V.
+	// C++ to SPIR-V.
 	//
 	// The label tracking is an ivec2, containing (from_label, to_label) of the
 	// current block, and needs to be updated as it leaves and enters every block.
@@ -397,8 +394,8 @@ public:
 	struct Location
 	{
 		uint32_t root_variable;
-    SPIRType root_type;
-    SPIRType member_type;
+		SPIRType root_type;
+		SPIRType member_type;
 		std::vector<AccessChainElement> access_chain;
 	};
 
@@ -440,6 +437,8 @@ protected:
 	Compiler &compiler;
 	ParsedIR &ir;
 
+	uint32_t type_of_temporary_id(uint32_t) const;
+
 	// Populate the entire heap memory tree's children with details. This includes
 	// identifying pointers in the heap.
 	void recurse_memory_tree(TreeNode *Node);
@@ -455,15 +454,13 @@ protected:
 	// different behaviour caused by Phi nodes changing values is processed here too.
 	void process(const SPIRBlock &Function);
 
-  // Decodes an access chain
-  std::pair<uint32_t, uint32_t> access_chain_to_byte_offset_and_size(
-    const SPIRType &Type,
-    uint32_t ThisStep,
-    const uint32_t* NextStep,
-    const uint32_t* EndOfSteps);
+	// Decodes an access chain
+	std::pair<uint32_t, uint32_t> access_chain_to_byte_offset_and_size(const SPIRType &Type, uint32_t ThisStep,
+	                                                                   const uint32_t *NextStep,
+	                                                                   const uint32_t *EndOfSteps);
 
-  // What an instruction actually does to memory, (if anything.)
-  std::unordered_map<uint32_t, ComplexOperatation> instruction_behavior;
+	// What an instruction actually does to memory, (if anything.)
+	std::unordered_map<uint32_t, ComplexOperatation> instruction_behavior;
 };
 
 } // namespace spirv_cross

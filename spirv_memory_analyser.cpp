@@ -220,6 +220,45 @@ GlobalPointerComplexity MemoryAnalyser::process()
 	return GlobalPointerComplexity::AllTrivial;
 }
 
+uint32_t spirv_cross::MemoryAnalyser::type_of_temporary_id(uint32_t Id) const
+{
+	// Try some easy cases:
+
+	auto expression = compiler.maybe_get<SPIRExpression>(Id);
+
+	if (expression)
+	{
+		return expression->expression_type;
+	}
+
+	auto variable = compiler.maybe_get<SPIRVariable>(Id);
+	if (variable)
+	{
+		return variable->basetype;
+	}
+
+	// Ok - try and find the instruction which creates it, as that'll declare it's type.
+	for (uint32_t maybeBlock = 0; maybeBlock < ir.ids.size(); maybeBlock++)
+	{
+		auto block = compiler.maybe_get<SPIRBlock>(maybeBlock);
+
+		if (!block)
+			continue;
+
+		for (auto &instruction : block->ops)
+		{
+			if (has_result(spv::Op(instruction.op)))
+			{
+				auto args = compiler.stream(instruction);
+				return args[0];
+			}
+		}
+	}
+
+	assert(false);
+	return 0;
+}
+
 void spirv_cross::MemoryAnalyser::recurse_memory_tree(TreeNode *Node)
 {
 	if (Node->type.pointer)
@@ -347,15 +386,15 @@ void spirv_cross::MemoryAnalyser::recurse_memory_tree(TreeNode *Node)
 bool spirv_cross::MemoryAnalyser::find_and_track_pointers(const SPIRBlock &Block)
 {
 	bool learntSomething = false;
-  std::vector<uint32_t> pointersIn;
-  std::vector<uint32_t> nonPointerIdsIn;
-  std::vector<uint32_t> litteralsIn;
+	std::vector<uint32_t> pointersIn;
+	std::vector<uint32_t> nonPointerIdsIn;
+	std::vector<uint32_t> litteralsIn;
 
 	for (auto &instruction : Block.ops)
 	{
-    pointersIn.clear();
-    nonPointerIdsIn.clear();
-    litteralsIn.clear();
+		pointersIn.clear();
+		nonPointerIdsIn.clear();
+		litteralsIn.clear();
 		auto *ops = compiler.stream(instruction);
 		auto op = static_cast<spv::Op>(instruction.op);
 
@@ -369,15 +408,15 @@ bool spirv_cross::MemoryAnalyser::find_and_track_pointers(const SPIRBlock &Block
 					// We passed a pointer into this instruction.
 					pointersIn.push_back(ops[arg]);
 				}
-        else
-        {
-          nonPointerIdsIn.push_back(ops[arg]);
-        }
+				else
+				{
+					nonPointerIdsIn.push_back(ops[arg]);
+				}
 			}
-      else
-      {
-        litteralsIn.push_back(ops[arg]);
-      }
+			else
+			{
+				litteralsIn.push_back(ops[arg]);
+			}
 		}
 
 		// We can ignore if it takes no pointers or pointer-like-ints.
@@ -422,7 +461,7 @@ bool spirv_cross::MemoryAnalyser::find_and_track_pointers(const SPIRBlock &Block
 					// We've learnt something here!
 					ptrInfo.addresses.push_back({});
 					ptrInfo.addresses.back().base_variable_id = pointersIn.front();
-					ptrInfo.addresses.back().litteral_offset = offset;
+					ptrInfo.addresses.back().litteral_offset = int32_t(offset);
 
 					learntSomething = true;
 				}
@@ -471,6 +510,8 @@ bool spirv_cross::MemoryAnalyser::find_and_track_pointers(const SPIRBlock &Block
 			else
 			{
 				// This is technically valid SPIR-V, but it just seems so dubious, and unsafe.
+				//
+				// (I haven't seen this in the wild.)
 				SPIRV_CROSS_THROW("Truncation of memory address to a smaller integer type.");
 			}
 			break;
@@ -481,12 +522,12 @@ bool spirv_cross::MemoryAnalyser::find_and_track_pointers(const SPIRBlock &Block
 		case spv::OpGenericCastToPtrExplicit:
 		case spv::OpPtrCastToGeneric:
 		{
-			// These pointer casts are always 'no-ops'.
+			// These pointer casts are always 'no-ops' - just forward the pointer.
 			morphPointerNoOp();
 			break;
 		}
 
-    case spv::OpUConvert:
+		case spv::OpUConvert:
 		case spv::OpSConvert:
 		{
 			auto returnTypeNo = ops[0];
@@ -512,44 +553,96 @@ bool spirv_cross::MemoryAnalyser::find_and_track_pointers(const SPIRBlock &Block
 			SPIRV_CROSS_THROW("Converting a memory address to a floating point value is absurd.");
 		}
 
-    case spv::OpIAdd:
-    {
-      // :TODO: find the non-pointer, and track it back to a constant if possible, else try to
-      // derive an expression for it.
-      break;
-    }
+		case spv::OpIAdd:
+		{
+			// :TODO: find the non-pointer, and track it back to a constant if possible, else try to
+			// derive an expression for it.
+			break;
+		}
 
-    case spv::OpISub:
-    {
-      // Two cases - either:
-      // - diff between two pointers, which is later used for something, eg
-      //   convert an anonymous access chain into a pointer diff, and then apply
-      //   it to any pointer.
-      // - Or moving backwards through an array. ew.
-      //
-      // :TODO: find the non-pointer, and track it back to a constant if
-      // possible, else try to derive an expression for it.
-      break;
-    }
+		case spv::OpISub:
+		{
+			// Two cases - either:
+			// - diff between two pointers, which is later used for something, eg
+			//   convert an anonymous access chain into a pointer diff, and then apply
+			//   it to any pointer.
+			// - Or moving backwards through an array. ew.
+			//
+			// :TODO: find the non-pointer, and track it back to a constant if
+			// possible, else try to derive an expression for it.
+			break;
+		}
 
-    case spv::OpInBoundsAccessChain:
-    case spv::OpAccessChain:
-    {
-      // We need to step into memory following the steps to calculate an offset.
+		case spv::OpUMod:
+		case spv::OpUDiv:
+		case spv::OpBitwiseAnd:
+		case spv::OpBitwiseOr:
+		case spv::OpBitwiseXor:
+		case spv::OpShiftLeftLogical:
+		case spv::OpShiftRightArithmetic:
+		case spv::OpShiftRightLogical:
+		{
+			// This may be needed for a compilation of something like a boost::intrusive::set or some other
+			// non allocating rbtree with an optimisation which stores the red / black flag within the lsb of the pointer.
+			SPIRV_CROSS_THROW("Bit manipulation on pointers not yet implemented.");
+		}
 
-      // These are the same as OpPtrAccessChain and OpInBoundsPtrAccessChain, but
-      // with an extra '0' at the start. :-)
-      // (See https://llvm.org/docs/GetElementPtr.html)
-      break;
-    }
-    case spv::OpPtrAccessChain:
-    case spv::OpInBoundsPtrAccessChain:
-    {
+		case spv::OpInBoundsAccessChain:
+		case spv::OpAccessChain:
+		{
+			// We need to step into memory following the indices to calculate an offset.
 
-      //:TODO:
-      break;
-    }
+			// This is basically the C++ arrow operator. These are the same as OpPtrAccessChain and
+			// OpInBoundsPtrAccessChain, but with an extra '0' at the start. :-)
+			// (See https://llvm.org/docs/GetElementPtr.html)
 
+			auto& inputTypePtr = compiler.get<SPIRType>(this->type_of_temporary_id(ops[2]));
+
+      auto& inputType = compiler.get<SPIRType>(inputTypePtr.parent_type);
+
+			auto offsetAndSize = access_chain_to_byte_offset_and_size(inputType, 0, ops + 3, ops + instruction.count - 1);
+
+			auto outputTypePtr = ops[0];
+			auto &outputType = compiler.get<SPIRType>(compiler.get<SPIRType>(outputTypePtr).parent_type);
+
+			auto outputSize = size_of(outputType);
+
+			if (outputSize != offsetAndSize.second)
+			{
+				SPIRV_CROSS_THROW("Access chain size mismatch?");
+			}
+
+			morphPointerAddConstant(offsetAndSize.first);
+
+			break;
+		}
+		case spv::OpPtrAccessChain:
+		case spv::OpInBoundsPtrAccessChain:
+		{
+			// We need to step into memory following the indices to calculate an offset.
+			// This is basically a C++ square bracket following a pointer.
+			// (See https://llvm.org/docs/GetElementPtr.html)
+
+			auto inputType = compiler.get<SPIRType>(this->type_of_temporary_id(ops[2]));
+
+			auto offsetAndSize = access_chain_to_byte_offset_and_size(inputType, 0, ops + 3, ops + instruction.count - 1);
+
+			auto outputTypePtr = ops[0];
+			auto &outputType = compiler.get<SPIRType>(compiler.get<SPIRType>(outputTypePtr).parent_type);
+
+			auto outputSize = size_of(outputType);
+
+			if (outputSize != offsetAndSize.second)
+			{
+				SPIRV_CROSS_THROW("Access chain size mismatch?");
+			}
+
+			morphPointerAddConstant(offsetAndSize.first);
+
+			break;
+		}
+		default:
+			SPIRV_CROSS_THROW("Pointer passed into a not yet implemented instruction");
 		}
 	}
 
@@ -558,4 +651,75 @@ bool spirv_cross::MemoryAnalyser::find_and_track_pointers(const SPIRBlock &Block
 
 void spirv_cross::MemoryAnalyser::process(const SPIRBlock &Function)
 {
+}
+
+std::pair<uint32_t, uint32_t> spirv_cross::MemoryAnalyser::access_chain_to_byte_offset_and_size(
+    const SPIRType &Type, uint32_t ThisStep, const uint32_t *NextStep, const uint32_t *EndOfSteps)
+{
+  if (NextStep == EndOfSteps)
+  {
+    auto s = size_of(Type);
+		return { uint32_t(s * ThisStep), s };
+  }
+
+	if (Type.pointer)
+	{
+		auto &pointedType = compiler.get<SPIRType>(Type.parent_type);
+		auto sizeOfPointed = size_of(pointedType);
+
+		auto out = access_chain_to_byte_offset_and_size(pointedType, compiler.get_constant(*NextStep).scalar_i32(),
+		                                                NextStep + 1, EndOfSteps);
+		out.first += ThisStep * sizeOfPointed;
+		return out;
+	}
+	else if (Type.array.size())
+	{
+		auto &arrayElement = compiler.get<SPIRType>(Type.parent_type);
+		auto sizeOfElement = size_of(arrayElement);
+
+		auto arraySize = size_of(Type);
+		auto stride = arraySize / Type.array.back();
+
+		auto out = access_chain_to_byte_offset_and_size(arrayElement, compiler.get_constant(*NextStep).scalar_i32(),
+		                                                NextStep + 1, EndOfSteps);
+		out.first += ThisStep * stride;
+		return out;
+	}
+	else if (Type.basetype == Type.Struct)
+	{
+		auto &childType = compiler.get<SPIRType>(Type.member_types[ThisStep]);
+		auto childOffset = compiler.type_struct_member_offset(Type, ThisStep);
+
+		auto out = access_chain_to_byte_offset_and_size(childType, compiler.get_constant(*NextStep).scalar_i32(),
+		                                                NextStep + 1, EndOfSteps);
+		out.first += childOffset;
+
+		return out;
+	}
+	else if (Type.columns > 1)
+	{
+		// We're a matrix
+
+		//:TODO: Figure out row major / column major stuff.
+		return {};
+	}
+	else if (Type.vecsize > 1)
+	{
+		// We're a vector.
+
+		auto &childElement = compiler.get<SPIRType>(Type.parent_type);
+		auto sizeOfElement = size_of(childElement);
+
+		auto vectorSize = size_of(Type);
+		auto stride = vectorSize / Type.array.back();
+
+		auto out = access_chain_to_byte_offset_and_size(childElement, *NextStep, NextStep + 1, EndOfSteps);
+		out.first += ThisStep * stride;
+
+		return out;
+	}
+	else
+	{
+		SPIRV_CROSS_THROW("Stepping into a scalar");
+	}
 }
