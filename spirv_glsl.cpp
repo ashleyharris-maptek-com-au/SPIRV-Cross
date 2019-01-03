@@ -2450,6 +2450,68 @@ string CompilerGLSL::unpack_expression_type(string expr_str, const SPIRType &)
 	return expr_str;
 }
 
+// Emits the RHS of an expression that's been tracked back through a memory simulation
+// This needs to polymorphed on both the layer of the expression tree, and the compiler.
+// (Putting behind the expression tree complicates code generation considerably).
+std::string spirv_cross::CompilerGLSL::rhs_memory_analyser_generate(const MemoryAnalyser::Data* var)
+{
+  auto resolutionComplexity = var->resolved();
+  if (resolutionComplexity == MemoryAnalyser::Data::False) SPIRV_CROSS_THROW("Unresolvable SPIRV");
+  else if (resolutionComplexity == MemoryAnalyser::Data::ExistingId)
+  {
+    return to_expression(var->id());
+  }
+
+  auto castOp = dynamic_cast<const MemoryAnalyser::DataCast*>(var);
+  if (castOp)
+  {
+    auto op = bitcast_glsl_no_ptr_op(get_type(castOp->output_type), get_type(castOp->input_type));
+
+    auto input = rhs_memory_analyser_generate(castOp->input.get());
+
+    if (op.empty())
+      return enclose_expression(input);
+    else
+      return join(op, "(", input, ")");
+  }
+
+  auto constantOp = dynamic_cast<const MemoryAnalyser::DataConstant*>(var);
+  if (constantOp)
+  {
+    if (constantOp->valueConstant || constantOp->valueConstExpr)
+    {
+      // Existing constant
+      return to_expression(var->id());
+    }
+
+    // A new constant - eg a constant that's been misaligned read.
+    SPIRV_CROSS_THROW("NYI");
+  }
+
+  auto compose = dynamic_cast<const MemoryAnalyser::DataComposition*>(var);
+  if (compose)
+  {
+    auto& outType = get_type(compose->output_type);
+
+    //:TODO: Refactor build_composite_combiner from below and merge into a
+    // common case so that we get nice swizzles.
+
+    auto op = type_to_glsl_constructor(outType) + "(";
+
+    for (auto& child : compose->inputs)
+    {
+      op += rhs_memory_analyser_generate(child.get());
+      op += ", ";
+    }
+
+    op.pop_back();
+    op.back() = ')';
+    return op;
+  }
+
+  SPIRV_CROSS_THROW("NYI");
+}
+
 // Sometimes we proactively enclosed an expression where it turns out we might have not needed it after all.
 void CompilerGLSL::strip_enclosed_expression(string &expr)
 {
@@ -7491,7 +7553,7 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
 
     if (outputSpirvType.pointer || inputSpirvType.pointer)
     {
-      // If we're casting pointers, then we need a build a memory map in order to
+      // If we're casting pointers, then we need to build a memory map in order to
       // attempt to convert those pointer operations to pointer-free language like GLSL.
       if (!analyse_memory_layout)
       {
@@ -7499,27 +7561,6 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
         analyse_memory_layout = true;
         break;
       }
-    }
-
-    if (outputSpirvType.pointer && inputSpirvType.pointer)
-    {
-      // This is basically a reinterpret_cast
-
-      //:TODO: Ashley Harris
-    }
-    else if (outputSpirvType.pointer)
-    {
-      // This is a cast of int -> ptr (or OpConvertUToPtr)
-
-      //:TODO: Ashley Harris
-
-    }
-    else if (inputSpirvType.pointer)
-    {
-      // This is a cast of ptr -> int (or OpConvertPtrToU)
-
-      //:TODO: Ashley Harris
-
     }
     else
     {
@@ -7541,16 +7582,47 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
       break;
     }
 
-    //:TODO: Ashley Harris
-
-
     break;
   }
 
+  case MemoryAnalyser::OpGenerateViaSpirvCrossMemoryAnalyser:
+  {
+    // We're generating a value from some value (ie this was probably an OpLoad), and
+    // the memory analyser has given us a solution which doesn't need to use any memory.
+    uint32_t result_type = ops[0];
+    uint32_t id = ops[1];
 
+    auto* data = memory_analyser.value_generated(id);
+    auto resolution = data->resolved();
 
+    if (resolution >= MemoryAnalyser::Data::Statements)
+    {
+      // Uh tricky case. Need multi-lines and temporary variables.
+      forced_temporaries.insert(id);
+      auto &type = get<SPIRType>(result_type);
+      auto flags = ir.meta[id].decoration.decoration_flags;
+      statement(flags_to_precision_qualifiers_glsl(type, flags), variable_decl(type, to_name(id)), ";");
+      set<SPIRExpression>(id, to_name(id), result_type, true);
+      SPIRV_CROSS_THROW("NYI");
+      //auto lines = data->to_glsl();
+      //statement(lines);
+    }
+    else if (resolution == MemoryAnalyser::Data::ExistingId)
+    {
+      // Trivial case - we can just refer to some other id.
+      // Eg Store A to 1, MemCopy 1 to 2, B = Load 2.
+      auto input = data->id();
+      inherit_expression_dependencies(id, input);
+    }
+    else
+    {
+      // We have a single expression that could be a RHS
+      auto rhs = rhs_memory_analyser_generate(data);
+      emit_op(result_type, id, rhs, should_forward(id));
+    }
 
-
+    break;
+  }
 	case OpQuantizeToF16:
 	{
 		uint32_t result_type = ops[0];
@@ -8589,7 +8661,13 @@ void CompilerGLSL::emit_instruction(const Instruction &instruction)
 		GLSL_BFOP(unsupported_FUnordGreaterThanEqual);
 		break;
 
+  case OpNop:
+    break;
+
 	default:
+#ifdef SPIRV_CROSS_EXCEPTIONS_TO_ASSERTIONS
+    SPIRV_CROSS_THROW("unimplemented op");
+#endif
 		statement("// unimplemented op ", instruction.op);
 		break;
 	}
@@ -10126,6 +10204,10 @@ void CompilerGLSL::flush_undeclared_variables(SPIRBlock &block)
 	for (auto &v : block.dominated_variables)
 	{
 		auto &var = get<SPIRVariable>(v);
+
+    // Sometimes a variable may no longer be needed.
+    if (analyse_memory_layout && !memory_analyser.variable_needed(v)) continue;
+
 		if (var.deferred_declaration)
 			statement(variable_decl(var), ";");
 		var.deferred_declaration = false;

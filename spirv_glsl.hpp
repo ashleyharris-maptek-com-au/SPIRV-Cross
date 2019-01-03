@@ -263,6 +263,9 @@ protected:
 	virtual void emit_uniform(const SPIRVariable &var);
 	virtual std::string unpack_expression_type(std::string expr_str, const SPIRType &type);
 
+  virtual std::string rhs_memory_analyser_generate(const MemoryAnalyser::Data *var);
+  //virtual void emit_memory_analyser_memcopy(const MemoryAnalyser::Data *var);
+
 	std::unique_ptr<std::ostringstream> buffer;
 
 	template <typename T>
