@@ -1,8 +1,14 @@
 #!/bin/bash
 
-GLSLANG_REV=ef807f4bc543e061f25dbbee6cb64dd5053b2adc
-SPIRV_TOOLS_REV=12e4a7b649e6fe28683de9fc352200c82948a1f0
-SPIRV_HEADERS_REV=111a25e4ae45e2b4d7c18415e1d6884712b958c4
+GLSLANG_REV=3de5cfe50edecd001e6d703555284d9b10b3dd57
+SPIRV_TOOLS_REV=f3ccb633dfd7c5de1f9f0a2d2e9d7a25f2478206
+SPIRV_HEADERS_REV=f027d53ded7e230e008d37c8b47ede7cd308e19d
+
+if [ -z $PROTOCOL ]; then
+	PROTOCOL=git
+fi
+
+echo "Using protocol \"$PROTOCOL\" for checking out repositories. If this is problematic, try PROTOCOL=https $0."
 
 if [ -d external/glslang ]; then
 	echo "Updating glslang to revision $GLSLANG_REV."
@@ -13,7 +19,7 @@ else
 	echo "Cloning glslang revision $GLSLANG_REV."
 	mkdir -p external
 	cd external
-	git clone https://github.com/KhronosGroup/glslang.git
+	git clone $PROTOCOL://github.com/KhronosGroup/glslang.git
 	cd glslang
 	git checkout $GLSLANG_REV
 fi
@@ -28,7 +34,7 @@ else
 	echo "Cloning SPIRV-Tools revision $SPIRV_TOOLS_REV."
 	mkdir -p external
 	cd external
-	git clone https://github.com/KhronosGroup/SPIRV-Tools.git spirv-tools
+	git clone $PROTOCOL://github.com/KhronosGroup/SPIRV-Tools.git spirv-tools
 	cd spirv-tools
 	git checkout $SPIRV_TOOLS_REV
 fi
@@ -39,7 +45,7 @@ if [ -d external/spirv-headers ]; then
 	git checkout $SPIRV_HEADERS_REV
 	cd ../..
 else
-	git clone https://github.com/KhronosGroup/SPIRV-Headers.git external/spirv-headers
+	git clone $PROTOCOL://github.com/KhronosGroup/SPIRV-Headers.git external/spirv-headers
 	cd external/spirv-headers
 	git checkout $SPIRV_HEADERS_REV
 	cd ../..
