@@ -184,7 +184,7 @@ template <typename T>
 struct PushConstant : Interface<T>
 {
 };
-}
+} // namespace internal
 
 struct spirv_cross_shader
 {
@@ -569,7 +569,7 @@ inline T atomicAdd(T &v, T a)
 	// FIXME: Can we really cast this? There is no other way I think ...
 	return std::atomic_fetch_add_explicit(reinterpret_cast<std::atomic<T> *>(&v), a, std::memory_order_relaxed);
 }
-}
+} // namespace spirv_cross
 
 void spirv_cross_set_stage_input(spirv_cross_shader_t *shader, unsigned location, void *data, size_t size)
 {

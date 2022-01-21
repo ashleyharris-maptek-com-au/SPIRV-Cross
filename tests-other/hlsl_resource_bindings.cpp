@@ -2,16 +2,19 @@
 // It does not validate output at the moment, but it's useful for ad-hoc testing.
 
 #include <spirv_cross_c.h>
-#include <vector>
 #include <stdio.h>
 #include <stdlib.h>
+#include <vector>
 
-#define SPVC_CHECKED_CALL(x) do { \
-	if ((x) != SPVC_SUCCESS) { \
-		fprintf(stderr, "Failed at line %d.\n", __LINE__); \
-		exit(1); \
-	} \
-} while(0)
+#define SPVC_CHECKED_CALL(x)                                   \
+	do                                                         \
+	{                                                          \
+		if ((x) != SPVC_SUCCESS)                               \
+		{                                                      \
+			fprintf(stderr, "Failed at line %d.\n", __LINE__); \
+			exit(1);                                           \
+		}                                                      \
+	} while (0)
 
 static std::vector<SpvId> read_file(const char *path)
 {
@@ -51,7 +54,8 @@ int main(int argc, char **argv)
 
 	SPVC_CHECKED_CALL(spvc_context_create(&ctx));
 	SPVC_CHECKED_CALL(spvc_context_parse_spirv(ctx, buffer.data(), buffer.size(), &parsed_ir));
-	SPVC_CHECKED_CALL(spvc_context_create_compiler(ctx, SPVC_BACKEND_HLSL, parsed_ir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP, &compiler));
+	SPVC_CHECKED_CALL(
+	    spvc_context_create_compiler(ctx, SPVC_BACKEND_HLSL, parsed_ir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP, &compiler));
 
 	spvc_compiler_options opts;
 	SPVC_CHECKED_CALL(spvc_compiler_create_compiler_options(compiler, &opts));
@@ -83,7 +87,7 @@ int main(int argc, char **argv)
 	if (!spvc_compiler_hlsl_is_resource_used(compiler, SpvExecutionModelFragment, 1, 4))
 		return EXIT_FAILURE;
 
-	if (!spvc_compiler_hlsl_is_resource_used(compiler, SpvExecutionModelFragment, SPVC_HLSL_PUSH_CONSTANT_DESC_SET, SPVC_HLSL_PUSH_CONSTANT_BINDING))
+	if (!spvc_compiler_hlsl_is_resource_used(compiler, SpvExecutionModelFragment, SPVC_HLSL_PUSH_CONSTANT_DESC_SET,
+	                                         SPVC_HLSL_PUSH_CONSTANT_BINDING))
 		return EXIT_FAILURE;
 }
-

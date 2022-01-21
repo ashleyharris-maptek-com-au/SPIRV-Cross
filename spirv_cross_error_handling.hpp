@@ -62,6 +62,7 @@ report_and_abort(const std::string &msg)
 class CompilerError : public std::runtime_error
 {
 public:
+
 	explicit CompilerError(const std::string &str)
 	    : std::runtime_error(str)
 	{

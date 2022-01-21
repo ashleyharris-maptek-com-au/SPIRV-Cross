@@ -39,6 +39,7 @@ class CompilerReflection : public CompilerGLSL
 	using Parent = CompilerGLSL;
 
 public:
+
 	explicit CompilerReflection(std::vector<uint32_t> spirv_)
 	    : Parent(std::move(spirv_))
 	{
@@ -67,6 +68,7 @@ public:
 	std::string compile() override;
 
 private:
+
 	static std::string execution_model_to_str(spv::ExecutionModel model);
 
 	void emit_entry_points();

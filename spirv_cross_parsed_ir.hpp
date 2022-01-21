@@ -39,10 +39,12 @@ namespace SPIRV_CROSS_NAMESPACE
 class ParsedIR
 {
 private:
+
 	// This must be destroyed after the "ids" vector.
 	std::unique_ptr<ObjectPoolGroup> pool_group;
 
 public:
+
 	ParsedIR();
 
 	// Due to custom allocations from object pools, we cannot use a default copy constructor.
@@ -232,6 +234,7 @@ public:
 	uint32_t get_spirv_version() const;
 
 private:
+
 	template <typename T>
 	T &get(uint32_t id)
 	{

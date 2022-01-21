@@ -151,6 +151,7 @@ struct EntryPoint
 class Compiler
 {
 public:
+
 	friend class CFG;
 	friend class DominatorBuilder;
 
@@ -534,6 +535,7 @@ public:
 	}
 
 protected:
+
 	const uint32_t *stream(const Instruction &instr) const
 	{
 		// If we're not going to use any arguments, just return nullptr.
@@ -583,7 +585,7 @@ protected:
 	// If our IDs are out of range here as part of opcodes, throw instead of
 	// undefined behavior.
 	template <typename T, typename... P>
-	T &set(uint32_t id, P &&... args)
+	T &set(uint32_t id, P &&...args)
 	{
 		ir.add_typed_id(static_cast<Types>(T::type), id);
 		auto &var = variant_set<T>(ir.ids[id], std::forward<P>(args)...);
@@ -1148,6 +1150,7 @@ protected:
 	const SmallVector<SPIRBlock::Case> &get_case_list(const SPIRBlock &block) const;
 
 private:
+
 	// Used only to implement the old deprecated get_entry_point() interface.
 	const SPIREntryPoint &get_first_entry_point(const std::string &name) const;
 	SPIREntryPoint &get_first_entry_point(const std::string &name);

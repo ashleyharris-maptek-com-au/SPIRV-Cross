@@ -32,6 +32,7 @@ namespace SPIRV_CROSS_NAMESPACE
 class CompilerCPP : public CompilerGLSL
 {
 public:
+
 	explicit CompilerCPP(std::vector<uint32_t> spirv_)
 	    : CompilerGLSL(std::move(spirv_))
 	{
@@ -65,6 +66,7 @@ public:
 	}
 
 private:
+
 	void emit_header() override;
 	void emit_c_linkage();
 	void emit_function_prototype(SPIRFunction &func, const Bitset &return_flags) override;

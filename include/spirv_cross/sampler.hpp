@@ -101,6 +101,6 @@ inline T texture(const sampler2DBase<T> &samp, const glm::vec2 &uv, float bias =
 {
 	return samp.sample(uv, bias);
 }
-}
+} // namespace spirv_cross
 
 #endif

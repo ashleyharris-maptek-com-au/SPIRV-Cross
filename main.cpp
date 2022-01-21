@@ -39,8 +39,8 @@
 #include <unordered_set>
 
 #ifdef _WIN32
-#include <io.h>
 #include <fcntl.h>
+#include <io.h>
 #endif
 
 #ifdef HAVE_SPIRV_CROSS_GIT_VERSION
@@ -297,10 +297,17 @@ static void print_resources(const Compiler &compiler, spv::StorageClass storage,
 		auto &type = compiler.get_type(res.value_type_id);
 		switch (type.basetype)
 		{
-		case SPIRType::Float: basetype = "float"; break;
-		case SPIRType::Int: basetype = "int"; break;
-		case SPIRType::UInt: basetype = "uint"; break;
-		default: break;
+		case SPIRType::Float:
+			basetype = "float";
+			break;
+		case SPIRType::Int:
+			basetype = "int";
+			break;
+		case SPIRType::UInt:
+			basetype = "uint";
+			break;
+		default:
+			break;
 		}
 
 		uint32_t array_size = 0;
@@ -326,16 +333,30 @@ static void print_resources(const Compiler &compiler, spv::StorageClass storage,
 		string builtin_str;
 		switch (res.builtin)
 		{
-		case spv::BuiltInPosition: builtin_str = "Position"; break;
-		case spv::BuiltInPointSize: builtin_str = "PointSize"; break;
-		case spv::BuiltInCullDistance: builtin_str = "CullDistance"; break;
-		case spv::BuiltInClipDistance: builtin_str = "ClipDistance"; break;
-		case spv::BuiltInTessLevelInner: builtin_str = "TessLevelInner"; break;
-		case spv::BuiltInTessLevelOuter: builtin_str = "TessLevelOuter"; break;
-		default: builtin_str = string("builtin #") + to_string(res.builtin);
+		case spv::BuiltInPosition:
+			builtin_str = "Position";
+			break;
+		case spv::BuiltInPointSize:
+			builtin_str = "PointSize";
+			break;
+		case spv::BuiltInCullDistance:
+			builtin_str = "CullDistance";
+			break;
+		case spv::BuiltInClipDistance:
+			builtin_str = "ClipDistance";
+			break;
+		case spv::BuiltInTessLevelInner:
+			builtin_str = "TessLevelInner";
+			break;
+		case spv::BuiltInTessLevelOuter:
+			builtin_str = "TessLevelOuter";
+			break;
+		default:
+			builtin_str = string("builtin #") + to_string(res.builtin);
 		}
 
-		fprintf(stderr, "Builtin %s (%s) (active: %s).\n", builtin_str.c_str(), type_str.c_str(), active ? "yes" : "no");
+		fprintf(stderr, "Builtin %s (%s) (active: %s).\n", builtin_str.c_str(), type_str.c_str(),
+		        active ? "yes" : "no");
 	}
 	fprintf(stderr, "=============\n\n");
 }
@@ -459,63 +480,67 @@ static void print_resources(const Compiler &compiler, const ShaderResources &res
 	fprintf(stderr, "\n");
 
 	fprintf(stderr, "Execution modes:\n");
-	modes.for_each_bit([&](uint32_t i) {
-		auto mode = static_cast<ExecutionMode>(i);
-		uint32_t arg0 = compiler.get_execution_mode_argument(mode, 0);
-		uint32_t arg1 = compiler.get_execution_mode_argument(mode, 1);
-		uint32_t arg2 = compiler.get_execution_mode_argument(mode, 2);
+	modes.for_each_bit(
+	    [&](uint32_t i)
+	
+{
+		    auto mode = static_cast<ExecutionMode>(i);
+		    uint32_t arg0 = compiler.get_execution_mode_argument(mode, 0);
+		    uint32_t arg1 = compiler.get_execution_mode_argument(mode, 1);
+		    uint32_t arg2 = compiler.get_execution_mode_argument(mode, 2);
 
-		switch (static_cast<ExecutionMode>(i))
-		{
-		case ExecutionModeInvocations:
-			fprintf(stderr, "  Invocations: %u\n", arg0);
-			break;
+		    switch (static_cast<ExecutionMode>(i))
+		
+{
+		    case ExecutionModeInvocations:
+			    fprintf(stderr, "  Invocations: %u\n", arg0);
+			    break;
 
-		case ExecutionModeLocalSize:
-			fprintf(stderr, "  LocalSize: (%u, %u, %u)\n", arg0, arg1, arg2);
-			break;
+		    case ExecutionModeLocalSize:
+			    fprintf(stderr, "  LocalSize: (%u, %u, %u)\n", arg0, arg1, arg2);
+			    break;
 
-		case ExecutionModeOutputVertices:
-			fprintf(stderr, "  OutputVertices: %u\n", arg0);
-			break;
+		    case ExecutionModeOutputVertices:
+			    fprintf(stderr, "  OutputVertices: %u\n", arg0);
+			    break;
 
 #define CHECK_MODE(m)                  \
 	case ExecutionMode##m:             \
 		fprintf(stderr, "  %s\n", #m); \
 		break
-			CHECK_MODE(SpacingEqual);
-			CHECK_MODE(SpacingFractionalEven);
-			CHECK_MODE(SpacingFractionalOdd);
-			CHECK_MODE(VertexOrderCw);
-			CHECK_MODE(VertexOrderCcw);
-			CHECK_MODE(PixelCenterInteger);
-			CHECK_MODE(OriginUpperLeft);
-			CHECK_MODE(OriginLowerLeft);
-			CHECK_MODE(EarlyFragmentTests);
-			CHECK_MODE(PointMode);
-			CHECK_MODE(Xfb);
-			CHECK_MODE(DepthReplacing);
-			CHECK_MODE(DepthGreater);
-			CHECK_MODE(DepthLess);
-			CHECK_MODE(DepthUnchanged);
-			CHECK_MODE(LocalSizeHint);
-			CHECK_MODE(InputPoints);
-			CHECK_MODE(InputLines);
-			CHECK_MODE(InputLinesAdjacency);
-			CHECK_MODE(Triangles);
-			CHECK_MODE(InputTrianglesAdjacency);
-			CHECK_MODE(Quads);
-			CHECK_MODE(Isolines);
-			CHECK_MODE(OutputPoints);
-			CHECK_MODE(OutputLineStrip);
-			CHECK_MODE(OutputTriangleStrip);
-			CHECK_MODE(VecTypeHint);
-			CHECK_MODE(ContractionOff);
+			    CHECK_MODE(SpacingEqual);
+			    CHECK_MODE(SpacingFractionalEven);
+			    CHECK_MODE(SpacingFractionalOdd);
+			    CHECK_MODE(VertexOrderCw);
+			    CHECK_MODE(VertexOrderCcw);
+			    CHECK_MODE(PixelCenterInteger);
+			    CHECK_MODE(OriginUpperLeft);
+			    CHECK_MODE(OriginLowerLeft);
+			    CHECK_MODE(EarlyFragmentTests);
+			    CHECK_MODE(PointMode);
+			    CHECK_MODE(Xfb);
+			    CHECK_MODE(DepthReplacing);
+			    CHECK_MODE(DepthGreater);
+			    CHECK_MODE(DepthLess);
+			    CHECK_MODE(DepthUnchanged);
+			    CHECK_MODE(LocalSizeHint);
+			    CHECK_MODE(InputPoints);
+			    CHECK_MODE(InputLines);
+			    CHECK_MODE(InputLinesAdjacency);
+			    CHECK_MODE(Triangles);
+			    CHECK_MODE(InputTrianglesAdjacency);
+			    CHECK_MODE(Quads);
+			    CHECK_MODE(Isolines);
+			    CHECK_MODE(OutputPoints);
+			    CHECK_MODE(OutputLineStrip);
+			    CHECK_MODE(OutputTriangleStrip);
+			    CHECK_MODE(VecTypeHint);
+			    CHECK_MODE(ContractionOff);
 
-		default:
-			break;
-		}
-	});
+		    default:
+			    break;
+		    }
+	    });
 	fprintf(stderr, "\n");
 
 	print_resources(compiler, "subpass inputs", res.subpass_inputs);
@@ -1167,7 +1192,8 @@ static string compile_iteration(const CLIArguments &args, std::vector<uint32_t> 
 
 	if (!args.variable_type_remaps.empty())
 	{
-		auto remap_cb = [&](const SPIRType &, const string &name, string &out) -> void {
+		auto remap_cb = [&](const SPIRType &, const string &name, string &out) -> void
+		{
 			for (const VariableTypeRemap &remap : args.variable_type_remaps)
 				if (name == remap.variable_name)
 					out = remap.new_variable_type;
@@ -1435,27 +1461,42 @@ static int main_inner(int argc, char *argv[])
 	CLIArguments args;
 	CLICallbacks cbs;
 
-	cbs.add("--help", [](CLIParser &parser) {
-		print_help();
-		parser.end();
-	});
-	cbs.add("--revision", [](CLIParser &parser) {
-		print_version();
-		parser.end();
-	});
+	cbs.add("--help",
+	        [](CLIParser &parser)
+	
+{
+		        print_help();
+		        parser.end();
+	        });
+	cbs.add("--revision",
+	        [](CLIParser &parser)
+	
+{
+		        print_version();
+		        parser.end();
+	        });
 	cbs.add("--output", [&args](CLIParser &parser) { args.output = parser.next_string(); });
-	cbs.add("--es", [&args](CLIParser &) {
-		args.es = true;
-		args.set_es = true;
-	});
-	cbs.add("--no-es", [&args](CLIParser &) {
-		args.es = false;
-		args.set_es = true;
-	});
-	cbs.add("--version", [&args](CLIParser &parser) {
-		args.version = parser.next_uint();
-		args.set_version = true;
-	});
+	cbs.add("--es",
+	        [&args](CLIParser &)
+	
+{
+		        args.es = true;
+		        args.set_es = true;
+	        });
+	cbs.add("--no-es",
+	        [&args](CLIParser &)
+	
+{
+		        args.es = false;
+		        args.set_es = true;
+	        });
+	cbs.add("--version",
+	        [&args](CLIParser &parser)
+	
+{
+		        args.version = parser.next_uint();
+		        args.set_version = true;
+	        });
 	cbs.add("--dump-resources", [&args](CLIParser &) { args.dump_resources = true; });
 	cbs.add("--force-temporary", [&args](CLIParser &) { args.force_temporary = true; });
 	cbs.add("--flatten-ubo", [&args](CLIParser &) { args.flatten_ubo = true; });
@@ -1469,15 +1510,18 @@ static int main_inner(int argc, char *argv[])
 	cbs.add("--glsl-emit-push-constant-as-ubo", [&args](CLIParser &) { args.glsl_emit_push_constant_as_ubo = true; });
 	cbs.add("--glsl-emit-ubo-as-plain-uniforms", [&args](CLIParser &) { args.glsl_emit_ubo_as_plain_uniforms = true; });
 	cbs.add("--glsl-force-flattened-io-blocks", [&args](CLIParser &) { args.glsl_force_flattened_io_blocks = true; });
-	cbs.add("--glsl-ovr-multiview-view-count", [&args](CLIParser &parser) { args.glsl_ovr_multiview_view_count = parser.next_uint(); });
-	cbs.add("--glsl-remap-ext-framebuffer-fetch", [&args](CLIParser &parser) {
-		uint32_t input_index = parser.next_uint();
-		uint32_t color_attachment = parser.next_uint();
-		args.glsl_ext_framebuffer_fetch.push_back({ input_index, color_attachment });
-	});
-	cbs.add("--glsl-ext-framebuffer-fetch-noncoherent", [&args](CLIParser &) {
-		args.glsl_ext_framebuffer_fetch_noncoherent = true;
-	});
+	cbs.add("--glsl-ovr-multiview-view-count",
+	        [&args](CLIParser &parser) { args.glsl_ovr_multiview_view_count = parser.next_uint(); });
+	cbs.add("--glsl-remap-ext-framebuffer-fetch",
+	        [&args](CLIParser &parser)
+	
+{
+		        uint32_t input_index = parser.next_uint();
+		        uint32_t color_attachment = parser.next_uint();
+		        args.glsl_ext_framebuffer_fetch.push_back({ input_index, color_attachment });
+	        });
+	cbs.add("--glsl-ext-framebuffer-fetch-noncoherent",
+	        [&args](CLIParser &) { args.glsl_ext_framebuffer_fetch_noncoherent = true; });
 	cbs.add("--vulkan-glsl-disable-ext-samplerless-texture-functions",
 	        [&args](CLIParser &) { args.vulkan_glsl_disable_ext_samplerless_texture_functions = true; });
 	cbs.add("--disable-storage-image-qualifier-deduction",
@@ -1489,9 +1533,8 @@ static int main_inner(int argc, char *argv[])
 	cbs.add("--hlsl-enable-compat", [&args](CLIParser &) { args.hlsl_compat = true; });
 	cbs.add("--hlsl-support-nonzero-basevertex-baseinstance",
 	        [&args](CLIParser &) { args.hlsl_support_nonzero_base = true; });
-	cbs.add("--hlsl-auto-binding", [&args](CLIParser &parser) {
-		args.hlsl_binding_flags |= hlsl_resource_type_to_flag(parser.next_string());
-	});
+	cbs.add("--hlsl-auto-binding", [&args](CLIParser &parser)
+	        { args.hlsl_binding_flags |= hlsl_resource_type_to_flag(parser.next_string()); });
 	cbs.add("--hlsl-force-storage-buffer-as-uav",
 	        [&args](CLIParser &) { args.hlsl_force_storage_buffer_as_uav = true; });
 	cbs.add("--hlsl-nonwritable-uav-texture-as-srv",
@@ -1523,23 +1566,29 @@ static int main_inner(int argc, char *argv[])
 	cbs.add("--msl-view-index-from-device-index",
 	        [&args](CLIParser &) { args.msl_view_index_from_device_index = true; });
 	cbs.add("--msl-dispatch-base", [&args](CLIParser &) { args.msl_dispatch_base = true; });
-	cbs.add("--msl-dynamic-buffer", [&args](CLIParser &parser) {
-		args.msl_argument_buffers = true;
-		// Make sure next_uint() is called in-order.
-		uint32_t desc_set = parser.next_uint();
-		uint32_t binding = parser.next_uint();
-		args.msl_dynamic_buffers.push_back(make_pair(desc_set, binding));
-	});
+	cbs.add("--msl-dynamic-buffer",
+	        [&args](CLIParser &parser)
+	
+{
+		        args.msl_argument_buffers = true;
+		        // Make sure next_uint() is called in-order.
+		        uint32_t desc_set = parser.next_uint();
+		        uint32_t binding = parser.next_uint();
+		        args.msl_dynamic_buffers.push_back(make_pair(desc_set, binding));
+	        });
 	cbs.add("--msl-decoration-binding", [&args](CLIParser &) { args.msl_decoration_binding = true; });
 	cbs.add("--msl-force-active-argument-buffer-resources",
 	        [&args](CLIParser &) { args.msl_force_active_argument_buffer_resources = true; });
-	cbs.add("--msl-inline-uniform-block", [&args](CLIParser &parser) {
-		args.msl_argument_buffers = true;
-		// Make sure next_uint() is called in-order.
-		uint32_t desc_set = parser.next_uint();
-		uint32_t binding = parser.next_uint();
-		args.msl_inline_uniform_blocks.push_back(make_pair(desc_set, binding));
-	});
+	cbs.add("--msl-inline-uniform-block",
+	        [&args](CLIParser &parser)
+	
+{
+		        args.msl_argument_buffers = true;
+		        // Make sure next_uint() is called in-order.
+		        uint32_t desc_set = parser.next_uint();
+		        uint32_t binding = parser.next_uint();
+		        args.msl_inline_uniform_blocks.push_back(make_pair(desc_set, binding));
+	        });
 	cbs.add("--msl-force-native-arrays", [&args](CLIParser &) { args.msl_force_native_arrays = true; });
 	cbs.add("--msl-disable-frag-depth-builtin", [&args](CLIParser &) { args.msl_enable_frag_depth_builtin = false; });
 	cbs.add("--msl-disable-frag-stencil-ref-builtin",
@@ -1548,24 +1597,27 @@ static int main_inner(int argc, char *argv[])
 	        [&args](CLIParser &parser) { args.msl_enable_frag_output_mask = parser.next_hex_uint(); });
 	cbs.add("--msl-no-clip-distance-user-varying",
 	        [&args](CLIParser &) { args.msl_enable_clip_distance_user_varying = false; });
-	cbs.add("--msl-shader-input", [&args](CLIParser &parser) {
-		MSLShaderInput input;
-		// Make sure next_uint() is called in-order.
-		input.location = parser.next_uint();
-		const char *format = parser.next_value_string("other");
-		if (strcmp(format, "any32") == 0)
-			input.format = MSL_SHADER_INPUT_FORMAT_ANY32;
-		else if (strcmp(format, "any16") == 0)
-			input.format = MSL_SHADER_INPUT_FORMAT_ANY16;
-		else if (strcmp(format, "u16") == 0)
-			input.format = MSL_SHADER_INPUT_FORMAT_UINT16;
-		else if (strcmp(format, "u8") == 0)
-			input.format = MSL_SHADER_INPUT_FORMAT_UINT8;
-		else
-			input.format = MSL_SHADER_INPUT_FORMAT_OTHER;
-		input.vecsize = parser.next_uint();
-		args.msl_shader_inputs.push_back(input);
-	});
+	cbs.add("--msl-shader-input",
+	        [&args](CLIParser &parser)
+	
+{
+		        MSLShaderInput input;
+		        // Make sure next_uint() is called in-order.
+		        input.location = parser.next_uint();
+		        const char *format = parser.next_value_string("other");
+		        if (strcmp(format, "any32") == 0)
+			        input.format = MSL_SHADER_INPUT_FORMAT_ANY32;
+		        else if (strcmp(format, "any16") == 0)
+			        input.format = MSL_SHADER_INPUT_FORMAT_ANY16;
+		        else if (strcmp(format, "u16") == 0)
+			        input.format = MSL_SHADER_INPUT_FORMAT_UINT16;
+		        else if (strcmp(format, "u8") == 0)
+			        input.format = MSL_SHADER_INPUT_FORMAT_UINT8;
+		        else
+			        input.format = MSL_SHADER_INPUT_FORMAT_OTHER;
+		        input.vecsize = parser.next_uint();
+		        args.msl_shader_inputs.push_back(input);
+	        });
 	cbs.add("--msl-multi-patch-workgroup", [&args](CLIParser &) { args.msl_multi_patch_workgroup = true; });
 	cbs.add("--msl-vertex-for-tessellation", [&args](CLIParser &) { args.msl_vertex_for_tessellation = true; });
 	cbs.add("--msl-additional-fixed-sample-mask",
@@ -1581,70 +1633,96 @@ static int main_inner(int argc, char *argv[])
 	cbs.add("--msl-fixed-subgroup-size",
 	        [&args](CLIParser &parser) { args.msl_fixed_subgroup_size = parser.next_uint(); });
 	cbs.add("--msl-force-sample-rate-shading", [&args](CLIParser &) { args.msl_force_sample_rate_shading = true; });
-	cbs.add("--msl-combined-sampler-suffix", [&args](CLIParser &parser) {
-		args.msl_combined_sampler_suffix = parser.next_string();
-	});
+	cbs.add("--msl-combined-sampler-suffix",
+	        [&args](CLIParser &parser) { args.msl_combined_sampler_suffix = parser.next_string(); });
 	cbs.add("--extension", [&args](CLIParser &parser) { args.extensions.push_back(parser.next_string()); });
-	cbs.add("--rename-entry-point", [&args](CLIParser &parser) {
-		auto old_name = parser.next_string();
-		auto new_name = parser.next_string();
-		auto model = stage_to_execution_model(parser.next_string());
-		args.entry_point_rename.push_back({ old_name, new_name, move(model) });
-	});
+	cbs.add("--rename-entry-point",
+	        [&args](CLIParser &parser)
+	
+{
+		        auto old_name = parser.next_string();
+		        auto new_name = parser.next_string();
+		        auto model = stage_to_execution_model(parser.next_string());
+		        args.entry_point_rename.push_back({ old_name, new_name, move(model) });
+	        });
 	cbs.add("--entry", [&args](CLIParser &parser) { args.entry = parser.next_string(); });
 	cbs.add("--stage", [&args](CLIParser &parser) { args.entry_stage = parser.next_string(); });
 	cbs.add("--separate-shader-objects", [&args](CLIParser &) { args.sso = true; });
-	cbs.add("--set-hlsl-vertex-input-semantic", [&args](CLIParser &parser) {
-		HLSLVertexAttributeRemap remap;
-		remap.location = parser.next_uint();
-		remap.semantic = parser.next_string();
-		args.hlsl_attr_remap.push_back(move(remap));
-	});
+	cbs.add("--set-hlsl-vertex-input-semantic",
+	        [&args](CLIParser &parser)
+	
+{
+		        HLSLVertexAttributeRemap remap;
+		        remap.location = parser.next_uint();
+		        remap.semantic = parser.next_string();
+		        args.hlsl_attr_remap.push_back(move(remap));
+	        });
 
-	cbs.add("--remap", [&args](CLIParser &parser) {
-		string src = parser.next_string();
-		string dst = parser.next_string();
-		uint32_t components = parser.next_uint();
-		args.remaps.push_back({ move(src), move(dst), components });
-	});
+	cbs.add("--remap",
+	        [&args](CLIParser &parser)
+	
+{
+		        string src = parser.next_string();
+		        string dst = parser.next_string();
+		        uint32_t components = parser.next_uint();
+		        args.remaps.push_back({ move(src), move(dst), components });
+	        });
 
-	cbs.add("--remap-variable-type", [&args](CLIParser &parser) {
-		string var_name = parser.next_string();
-		string new_type = parser.next_string();
-		args.variable_type_remaps.push_back({ move(var_name), move(new_type) });
-	});
+	cbs.add("--remap-variable-type",
+	        [&args](CLIParser &parser)
+	
+{
+		        string var_name = parser.next_string();
+		        string new_type = parser.next_string();
+		        args.variable_type_remaps.push_back({ move(var_name), move(new_type) });
+	        });
 
-	cbs.add("--rename-interface-variable", [&args](CLIParser &parser) {
-		StorageClass cls = StorageClassMax;
-		string clsStr = parser.next_string();
-		if (clsStr == "in")
-			cls = StorageClassInput;
-		else if (clsStr == "out")
-			cls = StorageClassOutput;
+	cbs.add("--rename-interface-variable",
+	        [&args](CLIParser &parser)
+	
+{
+		        StorageClass cls = StorageClassMax;
+		        string clsStr = parser.next_string();
+		        if (clsStr == "in")
+			        cls = StorageClassInput;
+		        else if (clsStr == "out")
+			        cls = StorageClassOutput;
 
-		uint32_t loc = parser.next_uint();
-		string var_name = parser.next_string();
-		args.interface_variable_renames.push_back({ cls, loc, move(var_name) });
-	});
+		        uint32_t loc = parser.next_uint();
+		        string var_name = parser.next_string();
+		        args.interface_variable_renames.push_back({ cls, loc, move(var_name) });
+	        });
 
-	cbs.add("--pls-in", [&args](CLIParser &parser) {
-		auto fmt = pls_format(parser.next_string());
-		auto name = parser.next_string();
-		args.pls_in.push_back({ move(fmt), move(name) });
-	});
-	cbs.add("--pls-out", [&args](CLIParser &parser) {
-		auto fmt = pls_format(parser.next_string());
-		auto name = parser.next_string();
-		args.pls_out.push_back({ move(fmt), move(name) });
-	});
-	cbs.add("--shader-model", [&args](CLIParser &parser) {
-		args.shader_model = parser.next_uint();
-		args.set_shader_model = true;
-	});
-	cbs.add("--msl-version", [&args](CLIParser &parser) {
-		args.msl_version = parser.next_uint();
-		args.set_msl_version = true;
-	});
+	cbs.add("--pls-in",
+	        [&args](CLIParser &parser)
+	
+{
+		        auto fmt = pls_format(parser.next_string());
+		        auto name = parser.next_string();
+		        args.pls_in.push_back({ move(fmt), move(name) });
+	        });
+	cbs.add("--pls-out",
+	        [&args](CLIParser &parser)
+	
+{
+		        auto fmt = pls_format(parser.next_string());
+		        auto name = parser.next_string();
+		        args.pls_out.push_back({ move(fmt), move(name) });
+	        });
+	cbs.add("--shader-model",
+	        [&args](CLIParser &parser)
+	
+{
+		        args.shader_model = parser.next_uint();
+		        args.set_shader_model = true;
+	        });
+	cbs.add("--msl-version",
+	        [&args](CLIParser &parser)
+	
+{
+		        args.msl_version = parser.next_uint();
+		        args.set_msl_version = true;
+	        });
 
 	cbs.add("--remove-unused-variables", [&args](CLIParser &) { args.remove_unused = true; });
 	cbs.add("--combined-samplers-inherit-bindings",
@@ -1653,30 +1731,37 @@ static int main_inner(int argc, char *argv[])
 	cbs.add("--no-support-nonzero-baseinstance", [&](CLIParser &) { args.support_nonzero_baseinstance = false; });
 	cbs.add("--emit-line-directives", [&args](CLIParser &) { args.emit_line_directives = true; });
 
-	cbs.add("--mask-stage-output-location", [&](CLIParser &parser) {
-		uint32_t location = parser.next_uint();
-		uint32_t component = parser.next_uint();
-		args.masked_stage_outputs.push_back({ location, component });
-	});
+	cbs.add("--mask-stage-output-location",
+	        [&](CLIParser &parser)
+	
+{
+		        uint32_t location = parser.next_uint();
+		        uint32_t component = parser.next_uint();
+		        args.masked_stage_outputs.push_back({ location, component });
+	        });
 
-	cbs.add("--mask-stage-output-builtin", [&](CLIParser &parser) {
-		BuiltIn masked_builtin = BuiltInMax;
-		std::string builtin = parser.next_string();
-		if (builtin == "Position")
-			masked_builtin = BuiltInPosition;
-		else if (builtin == "PointSize")
-			masked_builtin = BuiltInPointSize;
-		else if (builtin == "CullDistance")
-			masked_builtin = BuiltInCullDistance;
-		else if (builtin == "ClipDistance")
-			masked_builtin = BuiltInClipDistance;
-		else
-		{
-			print_help();
-			exit(EXIT_FAILURE);
-		}
-		args.masked_stage_builtins.push_back(masked_builtin);
-	});
+	cbs.add("--mask-stage-output-builtin",
+	        [&](CLIParser &parser)
+	
+{
+		        BuiltIn masked_builtin = BuiltInMax;
+		        std::string builtin = parser.next_string();
+		        if (builtin == "Position")
+			        masked_builtin = BuiltInPosition;
+		        else if (builtin == "PointSize")
+			        masked_builtin = BuiltInPointSize;
+		        else if (builtin == "CullDistance")
+			        masked_builtin = BuiltInCullDistance;
+		        else if (builtin == "ClipDistance")
+			        masked_builtin = BuiltInClipDistance;
+		        else
+		
+{
+			        print_help();
+			        exit(EXIT_FAILURE);
+		        }
+		        args.masked_stage_builtins.push_back(masked_builtin);
+	        });
 
 	cbs.default_handler = [&args](const char *value) { args.input = value; };
 	cbs.add("-", [&args](CLIParser &) { args.input = "-"; });

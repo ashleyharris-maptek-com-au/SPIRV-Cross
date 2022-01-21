@@ -73,6 +73,7 @@ typedef uint32_t AccessChainFlags;
 class CompilerGLSL : public Compiler
 {
 public:
+
 	struct Options
 	{
 		// The shading language version. Corresponds to #version $VALUE.
@@ -266,6 +267,7 @@ public:
 	void mask_stage_output_by_builtin(spv::BuiltIn builtin);
 
 protected:
+
 	struct ShaderSubgroupSupportHelper
 	{
 		// lower enum value = greater priority
@@ -449,7 +451,7 @@ protected:
 	}
 
 	template <typename T, typename... Ts>
-	inline void statement_inner(T &&t, Ts &&... ts)
+	inline void statement_inner(T &&t, Ts &&...ts)
 	{
 		buffer << std::forward<T>(t);
 		statement_count++;
@@ -457,7 +459,7 @@ protected:
 	}
 
 	template <typename... Ts>
-	inline void statement(Ts &&... ts)
+	inline void statement(Ts &&...ts)
 	{
 		if (is_forcing_recompilation())
 		{
@@ -482,7 +484,7 @@ protected:
 	}
 
 	template <typename... Ts>
-	inline void statement_no_indent(Ts &&... ts)
+	inline void statement_no_indent(Ts &&...ts)
 	{
 		auto old_indent = indent;
 		indent = 0;
@@ -637,7 +639,8 @@ protected:
 	                          const char *op);
 	void emit_binary_func_op(uint32_t result_type, uint32_t result_id, uint32_t op0, uint32_t op1, const char *op);
 	void emit_atomic_func_op(uint32_t result_type, uint32_t result_id, uint32_t op0, uint32_t op1, const char *op);
-	void emit_atomic_func_op(uint32_t result_type, uint32_t result_id, uint32_t op0, uint32_t op1, uint32_t op2, const char *op);
+	void emit_atomic_func_op(uint32_t result_type, uint32_t result_id, uint32_t op0, uint32_t op1, uint32_t op2,
+	                         const char *op);
 
 	void emit_unary_func_op_cast(uint32_t result_type, uint32_t result_id, uint32_t op0, const char *op,
 	                             SPIRType::BaseType input_type, SPIRType::BaseType expected_result_type);
@@ -941,6 +944,7 @@ protected:
 	std::unordered_set<uint32_t> masked_output_builtins;
 
 private:
+
 	void init();
 };
 } // namespace SPIRV_CROSS_NAMESPACE

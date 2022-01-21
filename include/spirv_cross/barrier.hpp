@@ -26,6 +26,7 @@ namespace spirv_cross
 class Barrier
 {
 public:
+
 	Barrier()
 	{
 		count.store(0);
@@ -71,10 +72,11 @@ public:
 	}
 
 private:
+
 	unsigned divisor = 1;
 	std::atomic<unsigned> count;
 	std::atomic<unsigned> iteration;
 };
-}
+} // namespace spirv_cross
 
 #endif

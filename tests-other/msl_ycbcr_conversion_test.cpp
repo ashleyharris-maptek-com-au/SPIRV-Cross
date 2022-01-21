@@ -6,24 +6,30 @@
 #endif
 
 #include <spirv_cross_c.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <vector>
 
-#define SPVC_CHECKED_CALL(x) do { \
-	if ((x) != SPVC_SUCCESS) { \
-		fprintf(stderr, "Failed at line %d.\n", __LINE__); \
-		exit(1); \
-	} \
-} while(0)
-#define SPVC_CHECKED_CALL_NEGATIVE(x) do { \
-	g_fail_on_error = SPVC_FALSE; \
-	if ((x) == SPVC_SUCCESS) { \
-		fprintf(stderr, "Failed at line %d.\n", __LINE__); \
-		exit(1); \
-	} \
-	g_fail_on_error = SPVC_TRUE; \
-} while(0)
+#define SPVC_CHECKED_CALL(x)                                   \
+	do                                                         \
+	{                                                          \
+		if ((x) != SPVC_SUCCESS)                               \
+		{                                                      \
+			fprintf(stderr, "Failed at line %d.\n", __LINE__); \
+			exit(1);                                           \
+		}                                                      \
+	} while (0)
+#define SPVC_CHECKED_CALL_NEGATIVE(x)                          \
+	do                                                         \
+	{                                                          \
+		g_fail_on_error = SPVC_FALSE;                          \
+		if ((x) == SPVC_SUCCESS)                               \
+		{                                                      \
+			fprintf(stderr, "Failed at line %d.\n", __LINE__); \
+			exit(1);                                           \
+		}                                                      \
+		g_fail_on_error = SPVC_TRUE;                           \
+	} while (0)
 
 static std::vector<SpvId> read_file(const char *path)
 {
@@ -64,9 +70,11 @@ int main(int argc, char **argv)
 
 	SPVC_CHECKED_CALL(spvc_context_create(&ctx));
 	SPVC_CHECKED_CALL(spvc_context_parse_spirv(ctx, buffer.data(), buffer.size(), &parsed_ir));
-	SPVC_CHECKED_CALL(spvc_context_create_compiler(ctx, SPVC_BACKEND_MSL, parsed_ir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP, &compiler));
+	SPVC_CHECKED_CALL(
+	    spvc_context_create_compiler(ctx, SPVC_BACKEND_MSL, parsed_ir, SPVC_CAPTURE_MODE_TAKE_OWNERSHIP, &compiler));
 	SPVC_CHECKED_CALL(spvc_compiler_create_compiler_options(compiler, &options));
-	SPVC_CHECKED_CALL(spvc_compiler_options_set_uint(options, SPVC_COMPILER_OPTION_MSL_VERSION, SPVC_MAKE_MSL_VERSION(2, 0, 0)));
+	SPVC_CHECKED_CALL(
+	    spvc_compiler_options_set_uint(options, SPVC_COMPILER_OPTION_MSL_VERSION, SPVC_MAKE_MSL_VERSION(2, 0, 0)));
 	SPVC_CHECKED_CALL(spvc_compiler_install_compiler_options(compiler, options));
 
 	spvc_msl_resource_binding binding;
@@ -100,4 +108,3 @@ int main(int argc, char **argv)
 
 	fprintf(stderr, "Output:\n%s\n", str);
 }
-

@@ -56,7 +56,7 @@ void join_helper(StringStream<> &stream, T &&t)
 }
 
 template <typename T, typename... Ts>
-void join_helper(StringStream<> &stream, T &&t, Ts &&... ts)
+void join_helper(StringStream<> &stream, T &&t, Ts &&...ts)
 {
 	stream << std::forward<T>(t);
 	join_helper(stream, std::forward<Ts>(ts)...);
@@ -66,6 +66,7 @@ void join_helper(StringStream<> &stream, T &&t, Ts &&... ts)
 class Bitset
 {
 public:
+
 	Bitset() = default;
 	explicit inline Bitset(uint64_t lower_)
 	    : lower(lower_)
@@ -175,6 +176,7 @@ public:
 	}
 
 private:
+
 	// The most common bits to set are all lower than 64,
 	// so optimize for this case. Bits spilling outside 64 go into a slower data structure.
 	// In almost all cases, higher data structure will not be used.
@@ -184,7 +186,7 @@ private:
 
 // Helper template to avoid lots of nasty string temporary munging.
 template <typename... Ts>
-std::string join(Ts &&... ts)
+std::string join(Ts &&...ts)
 {
 	StringStream<> stream;
 	inner::join_helper(stream, std::forward<Ts>(ts)...);
@@ -366,6 +368,7 @@ template <>
 class TypedID<TypeNone>
 {
 public:
+
 	TypedID() = default;
 	TypedID(uint32_t id_)
 	    : id(id_)
@@ -399,6 +402,7 @@ public:
 	}
 
 private:
+
 	uint32_t id = 0;
 };
 
@@ -406,6 +410,7 @@ template <Types type>
 class TypedID
 {
 public:
+
 	TypedID() = default;
 	TypedID(uint32_t id_)
 	    : id(id_)
@@ -423,6 +428,7 @@ public:
 	}
 
 private:
+
 	uint32_t id = 0;
 };
 
@@ -441,9 +447,10 @@ struct IVariant
 	ID self = 0;
 
 protected:
+
 	IVariant() = default;
-	IVariant(const IVariant&) = default;
-	IVariant &operator=(const IVariant&) = default;
+	IVariant(const IVariant &) = default;
+	IVariant &operator=(const IVariant &) = default;
 };
 
 #define SPIRV_CROSS_DECLARE_CLONE(T)                                \
@@ -1393,6 +1400,7 @@ struct ObjectPoolGroup
 class Variant
 {
 public:
+
 	explicit Variant(ObjectPoolGroup *group_)
 	    : group(group_)
 	{
@@ -1476,7 +1484,7 @@ public:
 	}
 
 	template <typename T, typename... Ts>
-	T *allocate_and_set(Types new_type, Ts &&... ts)
+	T *allocate_and_set(Types new_type, Ts &&...ts)
 	{
 		T *val = static_cast<ObjectPool<T> &>(*group->pools[new_type]).allocate(std::forward<Ts>(ts)...);
 		set(val, new_type);
@@ -1532,6 +1540,7 @@ public:
 	}
 
 private:
+
 	ObjectPoolGroup *group = nullptr;
 	IVariant *holder = nullptr;
 	Types type = TypeNone;
@@ -1551,7 +1560,7 @@ const T &variant_get(const Variant &var)
 }
 
 template <typename T, typename... P>
-T &variant_set(Variant &var, P &&... args)
+T &variant_set(Variant &var, P &&...args)
 {
 	auto *ptr = var.allocate_and_set<T>(static_cast<Types>(T::type), std::forward<P>(args)...);
 	return *ptr;
@@ -1695,6 +1704,7 @@ using VariableTypeRemapCallback =
 class Hasher
 {
 public:
+
 	inline void u32(uint32_t value)
 	{
 		h = (h * 0x100000001b3ull) ^ value;
@@ -1706,6 +1716,7 @@ public:
 	}
 
 private:
+
 	uint64_t h = 0xcbf29ce484222325ull;
 };
 

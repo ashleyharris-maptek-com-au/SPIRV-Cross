@@ -48,6 +48,7 @@ class Stream
 	char current_locale_radix_character = '.';
 
 public:
+
 	void set_current_locale_radix_character(char c)
 	{
 		current_locale_radix_character = c;
@@ -76,6 +77,7 @@ public:
 	}
 
 private:
+
 	inline void statement_indent()
 	{
 		for (uint32_t i = 0; i < indent; i++)
@@ -89,14 +91,14 @@ private:
 	}
 
 	template <typename T, typename... Ts>
-	inline void statement_inner(T &&t, Ts &&... ts)
+	inline void statement_inner(T &&t, Ts &&...ts)
 	{
 		buffer << std::forward<T>(t);
 		statement_inner(std::forward<Ts>(ts)...);
 	}
 
 	template <typename... Ts>
-	inline void statement(Ts &&... ts)
+	inline void statement(Ts &&...ts)
 	{
 		statement_indent();
 		statement_inner(std::forward<Ts>(ts)...);
@@ -104,7 +106,7 @@ private:
 	}
 
 	template <typename... Ts>
-	void statement_no_return(Ts &&... ts)
+	void statement_no_return(Ts &&...ts)
 	{
 		statement_indent();
 		statement_inner(std::forward<Ts>(ts)...);
@@ -303,21 +305,27 @@ void CompilerReflection::emit_types()
 
 	// If we have physical pointers or arrays of physical pointers, it's also helpful to emit the pointee type
 	// and chain the type hierarchy. For POD, arrays can emit the entire type in-place.
-	ir.for_each_typed_id<SPIRType>([&](uint32_t self, SPIRType &type) {
-		if (naturally_emit_type(type))
-		{
-			emit_type(self, emitted_open_tag);
-		}
-		else if (type_is_reference(type))
-		{
-			if (!naturally_emit_type(this->get<SPIRType>(type.parent_type)) &&
-			    find(physical_pointee_types.begin(), physical_pointee_types.end(), type.parent_type) ==
-			        physical_pointee_types.end())
-			{
-				physical_pointee_types.push_back(type.parent_type);
-			}
-		}
-	});
+	ir.for_each_typed_id<SPIRType>(
+	    [&](uint32_t self, SPIRType &type)
+	
+{
+		    if (naturally_emit_type(type))
+		
+{
+			    emit_type(self, emitted_open_tag);
+		    }
+		    else if (type_is_reference(type))
+		
+{
+			    if (!naturally_emit_type(this->get<SPIRType>(type.parent_type)) &&
+			        find(physical_pointee_types.begin(), physical_pointee_types.end(), type.parent_type) ==
+			            physical_pointee_types.end())
+			
+{
+				    physical_pointee_types.push_back(type.parent_type);
+			    }
+		    }
+	    });
 
 	for (uint32_t pointee_type : physical_pointee_types)
 		emit_type(pointee_type, emitted_open_tag);
@@ -489,14 +497,17 @@ void CompilerReflection::emit_entry_points()
 	if (!entries.empty())
 	{
 		// Needed to make output deterministic.
-		sort(begin(entries), end(entries), [](const EntryPoint &a, const EntryPoint &b) -> bool {
-			if (a.execution_model < b.execution_model)
-				return true;
-			else if (a.execution_model > b.execution_model)
-				return false;
-			else
-				return a.name < b.name;
-		});
+		sort(begin(entries), end(entries),
+		     [](const EntryPoint &a, const EntryPoint &b) -> bool
+		
+{
+			     if (a.execution_model < b.execution_model)
+				     return true;
+			     else if (a.execution_model > b.execution_model)
+				     return false;
+			     else
+				     return a.name < b.name;
+		     });
 
 		json_stream->emit_json_key_array("entryPoints");
 		for (auto &e : entries)
@@ -513,11 +524,11 @@ void CompilerReflection::emit_entry_points()
 
 				json_stream->emit_json_key_array("workgroup_size");
 				json_stream->emit_json_array_value(spec_x.id != ID(0) ? spec_x.constant_id :
-				                                                        spv_entry.workgroup_size.x);
+                                                                        spv_entry.workgroup_size.x);
 				json_stream->emit_json_array_value(spec_y.id != ID(0) ? spec_y.constant_id :
-				                                                        spv_entry.workgroup_size.y);
+                                                                        spv_entry.workgroup_size.y);
 				json_stream->emit_json_array_value(spec_z.id != ID(0) ? spec_z.constant_id :
-				                                                        spv_entry.workgroup_size.z);
+                                                                        spv_entry.workgroup_size.z);
 				json_stream->end_json_array();
 
 				json_stream->emit_json_key_array("workgroup_size_is_spec_constant_id");

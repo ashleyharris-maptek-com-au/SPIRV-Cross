@@ -33,6 +33,7 @@ class Compiler;
 class CFG
 {
 public:
+
 	CFG(Compiler &compiler, const SPIRFunction &function);
 
 	Compiler &get_compiler()
@@ -107,6 +108,7 @@ public:
 	bool node_terminates_control_flow_in_sub_graph(BlockID from, BlockID to) const;
 
 private:
+
 	struct VisitOrder
 	{
 		int &get()
@@ -144,6 +146,7 @@ private:
 class DominatorBuilder
 {
 public:
+
 	DominatorBuilder(const CFG &cfg);
 
 	void add_block(uint32_t block);
@@ -155,6 +158,7 @@ public:
 	void lift_continue_block_dominator();
 
 private:
+
 	const CFG &cfg;
 	uint32_t dominator = 0;
 };

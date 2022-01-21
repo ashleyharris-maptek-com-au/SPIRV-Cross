@@ -58,6 +58,6 @@ void imageStore(image2DBase<T> &image, glm::ivec2 coord, const T &value)
 {
 	image.store(coord, value);
 }
-}
+} // namespace spirv_cross
 
 #endif

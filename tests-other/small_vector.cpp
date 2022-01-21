@@ -25,17 +25,38 @@ using namespace spirv_cross;
 static int allocations = 0;
 static int deallocations = 0;
 
-#define SPVC_ASSERT(x) do { \
-	if (!(x)) SPIRV_CROSS_THROW("Assert: " #x " failed!"); \
-} while(0)
+#define SPVC_ASSERT(x)                                   \
+	do                                                   \
+	{                                                    \
+		if (!(x))                                        \
+			SPIRV_CROSS_THROW("Assert: " #x " failed!"); \
+	} while (0)
 
 struct RAIIInt
 {
-	RAIIInt(int v_) : v(v_) { allocations++; }
-	~RAIIInt() { deallocations++; }
-	RAIIInt() { allocations++; }
-	RAIIInt(const RAIIInt &other) { v = other.v; allocations++; }
-	RAIIInt(RAIIInt &&other) SPIRV_CROSS_NOEXCEPT { v = other.v; allocations++; }
+	RAIIInt(int v_)
+	    : v(v_)
+	{
+		allocations++;
+	}
+	~RAIIInt()
+	{
+		deallocations++;
+	}
+	RAIIInt()
+	{
+		allocations++;
+	}
+	RAIIInt(const RAIIInt &other)
+	{
+		v = other.v;
+		allocations++;
+	}
+	RAIIInt(RAIIInt &&other) SPIRV_CROSS_NOEXCEPT
+	{
+		v = other.v;
+		allocations++;
+	}
 	RAIIInt &operator=(RAIIInt &&) = default;
 	RAIIInt &operator=(const RAIIInt &) = default;
 
@@ -223,4 +244,3 @@ int main()
 
 	SPVC_ASSERT(allocations > 0 && deallocations > 0 && deallocations == allocations);
 }
-

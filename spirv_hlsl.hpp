@@ -101,6 +101,7 @@ struct HLSLResourceBinding
 class CompilerHLSL : public CompilerGLSL
 {
 public:
+
 	struct Options
 	{
 		uint32_t shader_model = 30; // TODO: map ps_4_0_level_9_0,... somehow
@@ -209,6 +210,7 @@ public:
 	void set_hlsl_force_storage_buffer_as_uav(uint32_t desc_set, uint32_t binding);
 
 private:
+
 	std::string type_to_glsl(const SPIRType &type, uint32_t id = 0) override;
 	std::string image_type_hlsl(const SPIRType &type, uint32_t id);
 	std::string image_type_hlsl_modern(const SPIRType &type, uint32_t id);
@@ -220,8 +222,7 @@ private:
 	void declare_undefined_values() override;
 	void emit_interface_block_globally(const SPIRVariable &type);
 	void emit_interface_block_in_struct(const SPIRVariable &var, std::unordered_set<uint32_t> &active_locations);
-	void emit_interface_block_member_in_struct(const SPIRVariable &var, uint32_t member_index,
-	                                           uint32_t location,
+	void emit_interface_block_member_in_struct(const SPIRVariable &var, uint32_t member_index, uint32_t location,
 	                                           std::unordered_set<uint32_t> &active_locations);
 	void emit_builtin_inputs_in_struct();
 	void emit_builtin_outputs_in_struct();

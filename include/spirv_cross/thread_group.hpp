@@ -28,6 +28,7 @@ template <typename T, unsigned Size>
 class ThreadGroup
 {
 public:
+
 	ThreadGroup(T *impl)
 	{
 		for (unsigned i = 0; i < Size; i++)
@@ -47,6 +48,7 @@ public:
 	}
 
 private:
+
 	struct Thread
 	{
 		enum State
@@ -59,23 +61,28 @@ private:
 
 		void start(T *impl)
 		{
-			worker = std::thread([impl, this] {
-				for (;;)
-				{
-					{
-						std::unique_lock<std::mutex> l{ lock };
-						cond.wait(l, [this] { return state != Idle; });
-						if (state == Dying)
-							break;
-					}
+			worker = std::thread(
+			    [impl, this]
+			
+{
+				    for (;;)
+				
+{
+					
+{
+						    std::unique_lock<std::mutex> l{ lock };
+						    cond.wait(l, [this] { return state != Idle; });
+						    if (state == Dying)
+							    break;
+					    }
 
-					impl->main();
+					    impl->main();
 
-					std::lock_guard<std::mutex> l{ lock };
-					state = Idle;
-					cond.notify_one();
-				}
-			});
+					    std::lock_guard<std::mutex> l{ lock };
+					    state = Idle;
+					    cond.notify_one();
+				    }
+			    });
 		}
 
 		void wait()
@@ -109,6 +116,6 @@ private:
 	};
 	Thread workers[Size];
 };
-}
+} // namespace spirv_cross
 
 #endif

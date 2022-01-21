@@ -32,6 +32,7 @@ namespace SPIRV_CROSS_NAMESPACE
 class Parser
 {
 public:
+
 	Parser(const uint32_t *spirv_data, size_t word_count);
 	Parser(std::vector<uint32_t> spirv);
 
@@ -43,6 +44,7 @@ public:
 	}
 
 private:
+
 	ParsedIR ir;
 	SPIRFunction *current_function = nullptr;
 	SPIRBlock *current_block = nullptr;
@@ -51,7 +53,7 @@ private:
 	const uint32_t *stream(const Instruction &instr) const;
 
 	template <typename T, typename... P>
-	T &set(uint32_t id, P &&... args)
+	T &set(uint32_t id, P &&...args)
 	{
 		ir.add_typed_id(static_cast<Types>(T::type), id);
 		auto &var = variant_set<T>(ir.ids[id], std::forward<P>(args)...);

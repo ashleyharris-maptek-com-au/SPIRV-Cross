@@ -55,6 +55,7 @@ template <typename T, size_t N>
 class AlignedBuffer
 {
 public:
+
 	T *data()
 	{
 #if defined(_MSC_VER) && _MSC_VER < 1900
@@ -68,6 +69,7 @@ public:
 	}
 
 private:
+
 #if defined(_MSC_VER) && _MSC_VER < 1900
 	// MSVC 2013 workarounds, sigh ...
 	union
@@ -84,6 +86,7 @@ template <typename T>
 class AlignedBuffer<T, 0>
 {
 public:
+
 	T *data()
 	{
 		return nullptr;
@@ -95,6 +98,7 @@ template <typename T>
 class VectorView
 {
 public:
+
 	T &operator[](size_t i) SPIRV_CROSS_NOEXCEPT
 	{
 		return ptr[i];
@@ -191,6 +195,7 @@ public:
 	void operator=(const VectorView &) = delete;
 
 protected:
+
 	VectorView() = default;
 	T *ptr = nullptr;
 	size_t buffer_size = 0;
@@ -204,6 +209,7 @@ template <typename T, size_t N = 8>
 class SmallVector : public VectorView<T>
 {
 public:
+
 	SmallVector() SPIRV_CROSS_NOEXCEPT
 	{
 		this->ptr = stack_storage.data();
@@ -318,7 +324,7 @@ public:
 	}
 
 	template <typename... Ts>
-	void emplace_back(Ts &&... ts) SPIRV_CROSS_NOEXCEPT
+	void emplace_back(Ts &&...ts) SPIRV_CROSS_NOEXCEPT
 	{
 		reserve(this->buffer_size + 1);
 		new (&this->ptr[this->buffer_size]) T(std::forward<Ts>(ts)...);
@@ -518,6 +524,7 @@ public:
 	}
 
 private:
+
 	size_t buffer_capacity = 0;
 	AlignedBuffer<T, N> stack_storage;
 };
@@ -545,6 +552,7 @@ using VectorView = std::vector<T>;
 class ObjectPoolBase
 {
 public:
+
 	virtual ~ObjectPoolBase() = default;
 	virtual void deallocate_opaque(void *ptr) = 0;
 };
@@ -553,13 +561,14 @@ template <typename T>
 class ObjectPool : public ObjectPoolBase
 {
 public:
+
 	explicit ObjectPool(unsigned start_object_count_ = 16)
 	    : start_object_count(start_object_count_)
 	{
 	}
 
 	template <typename... P>
-	T *allocate(P &&... p)
+	T *allocate(P &&...p)
 	{
 		if (vacants.empty())
 		{
@@ -598,6 +607,7 @@ public:
 	}
 
 protected:
+
 	Vector<T *> vacants;
 
 	struct MallocDeleter
@@ -616,6 +626,7 @@ template <size_t StackSize = 4096, size_t BlockSize = 4096>
 class StringStream
 {
 public:
+
 	StringStream()
 	{
 		reset();
@@ -701,6 +712,7 @@ public:
 	}
 
 private:
+
 	struct Buffer
 	{
 		char *buffer = nullptr;
